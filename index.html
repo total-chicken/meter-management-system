@@ -3,7 +3,8 @@
 <head>
   <title>Meter Management System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=https://script.google.com/a/~/macros/s/AKfycbyMymNAKfPpdbJMlfOEjYs8m3WcOmUGKLCo1IhrhlnGiwU-22O2R9erq2PdsdgZxFpYPA/exec">
+  <!-- Instant redirect via meta tag -->
+  <meta http-equiv="refresh" content="0; url=https://script.google.com/a/~/macros/s/AKfycbx6JFLO2fx5m5zh9TyE8tqeRIhTHD93IiG0QS8hBr8y5KgLLJlP9Y0eQn1jl3VfOBJHTQ/exec">
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -55,13 +56,21 @@
     }
   </style>
   <script>
-    // Immediate redirect to your Apps Script project
-    var appUrl = "https://script.google.com/a/~/macros/s/AKfycbyMymNAKfPpdbJMlfOEjYs8m3WcOmUGKLCo1IhrhlnGiwU-22O2R9erq2PdsdgZxFpYPA/exec";
+    // Multiple redirect methods for maximum speed and compatibility
     
-    window.onload = function() {
-      // Immediate redirect
+    // Method 1: Immediate redirect (executes as soon as script loads)
+    (function() {
+      var appUrl = "https://script.google.com/a/~/macros/s/AKfycbx6JFLO2fx5m5zh9TyE8tqeRIhTHD93IiG0QS8hBr8y5KgLLJlP9Y0eQn1jl3VfOBJHTQ/exec";
       window.location.replace(appUrl);
-    };
+    })();
+    
+    // Method 2: Backup redirect in case Method 1 fails
+    window.location.href = "https://script.google.com/a/~/macros/s/AKfycbx6JFLO2fx5m5zh9TyE8tqeRIhTHD93IiG0QS8hBr8y5KgLLJlP9Y0eQn1jl3VfOBJHTQ/exec";
+    
+    // Method 3: Additional backup on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      window.location.replace("https://script.google.com/a/~/macros/s/AKfycbx6JFLO2fx5m5zh9TyE8tqeRIhTHD93IiG0QS8hBr8y5KgLLJlP9Y0eQn1jl3VfOBJHTQ/exec");
+    });
   </script>
 </head>
 <body>
@@ -69,7 +78,7 @@
     <div class="emoji">⚡</div>
     <h1>Meter Management System</h1>
     <p>Redirecting to application...</p>
-    <a href="https://script.google.com/a/~/macros/s/AKfycbyMymNAKfPpdbJMlfOEjYs8m3WcOmUGKLCo1IhrhlnGiwU-22O2R9erq2PdsdgZxFpYPA/exec" class="manual-link">
+    <a href="https://script.google.com/a/~/macros/s/AKfycbx6JFLO2fx5m5zh9TyE8tqeRIhTHD93IiG0QS8hBr8y5KgLLJlP9Y0eQn1jl3VfOBJHTQ/exec" class="manual-link">
       🚀 Launch Application
     </a>
   </div>
