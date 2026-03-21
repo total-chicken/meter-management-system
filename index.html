@@ -1,86 +1,362 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Meter Management System</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Instant redirect via meta tag -->
-  <meta http-equiv="refresh" content="0; url=https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MMS">
+  <meta name="theme-color" content="#3b82f6">
+  <title>Meter Management System</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #060d1a;
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: hidden;
     }
-    .container {
+
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-orb-1 {
+      width: 400px; height: 400px;
+      background: #3b82f6;
+      top: -100px; left: -100px;
+      animation: float1 8s ease-in-out infinite;
+    }
+
+    .bg-orb-2 {
+      width: 300px; height: 300px;
+      background: #6366f1;
+      bottom: -80px; right: -80px;
+      animation: float2 10s ease-in-out infinite;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0); }
+      50%       { transform: translate(30px, -30px); }
+    }
+
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0); }
+      50%       { transform: translate(-20px, 20px); }
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(15, 30, 51, 0.9);
+      border: 1px solid #1e3a5f;
+      border-radius: 24px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 360px;
       text-align: center;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 40px;
-      border-radius: 15px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(10px);
-      max-width: 500px;
-      margin: 20px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+      backdrop-filter: blur(20px);
+      animation: cardIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .logo {
+      width: 76px; height: 76px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border-radius: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      margin: 0 auto 24px;
+      box-shadow: 0 8px 32px rgba(59,130,246,0.4);
+      animation: logoPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes logoPulse {
+      0%, 100% { box-shadow: 0 8px 32px rgba(59,130,246,0.4); }
+      50%       { box-shadow: 0 8px 48px rgba(59,130,246,0.7); }
+    }
+
     h1 {
-      color: #4a5568;
-      margin-bottom: 20px;
-      font-size: 28px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
     }
-    p {
-      color: #666;
-      line-height: 1.6;
-      margin-bottom: 20px;
+
+    .subtitle {
+      font-size: 0.72rem;
+      color: #475569;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
     }
-    .manual-link {
-      padding: 12px 24px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+    .progress-wrap {
+      background: #0a1628;
+      border-radius: 100px;
+      height: 4px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      border: 1px solid #1e3a5f;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 100px;
+      width: 0%;
+      background: linear-gradient(90deg, #3b82f6, #6366f1, #4db6a9);
+      background-size: 200% 100%;
+      animation: progressFill 2.5s ease forwards, shimmer 1.5s linear infinite;
+    }
+
+    @keyframes progressFill {
+      0%   { width: 0%; }
+      30%  { width: 45%; }
+      60%  { width: 75%; }
+      85%  { width: 90%; }
+      100% { width: 100%; }
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .status {
+      font-size: 0.72rem;
+      color: #475569;
+      margin-bottom: 28px;
+      min-height: 18px;
+      transition: color 0.3s;
+    }
+
+    .status.active { color: #60a5fa; }
+
+    .launch-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 28px;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
       color: white;
       text-decoration: none;
-      border-radius: 8px;
-      display: inline-block;
-      font-weight: 500;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+      transition: all 0.2s;
+      margin-bottom: 16px;
+      width: 100%;
+      justify-content: center;
     }
-    .manual-link:hover {
+
+    .launch-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 8px 30px rgba(59,130,246,0.5);
     }
-    .emoji {
-      font-size: 48px;
-      margin-bottom: 20px;
+
+    /* Install button */
+    .install-btn {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 28px;
+      background: transparent;
+      color: #60a5fa;
+      border: 1px solid #1e3a5f;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .install-btn:hover {
+      background: #0f2847;
+      border-color: #3b82f6;
+    }
+
+    .install-btn.visible { display: inline-flex; }
+
+    /* iOS install hint */
+    .ios-hint {
+      display: none;
+      background: #071020;
+      border: 1px solid #1e3a5f;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-size: 0.72rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      text-align: left;
+    }
+
+    .ios-hint.visible { display: block; }
+
+    .badges {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      background: #071020;
+      border: 1px solid #1e3a5f;
+      border-radius: 100px;
+      font-size: 0.63rem;
+      color: #334155;
+    }
+
+    .footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 20px;
+      font-size: 0.63rem;
+      color: #1e3a5f;
     }
   </style>
-  <script>
-    // Multiple redirect methods for maximum speed and compatibility
-    
-    // Method 1: Immediate redirect (executes as soon as script loads)
-    (function() {
-      var appUrl = "https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec";
-      window.location.replace(appUrl);
-    })();
-    
-    // Method 2: Backup redirect in case Method 1 fails
-    window.location.href = "https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec";
-    
-    // Method 3: Additional backup on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      window.location.replace("https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec");
-    });
-  </script>
 </head>
 <body>
-  <div class="container">
-    <div class="emoji">⚡</div>
-    <h1>Meter Management System</h1>
-    <p>Redirecting to application...</p>
-    <a href="https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec" class="manual-link">
-      🚀 Launch Application
+
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+
+  <div class="card">
+    <div class="logo">⚡</div>
+    <h1>Meter Management</h1>
+    <p class="subtitle">DVVNL · MDM System · v2.0</p>
+
+    <div class="progress-wrap">
+      <div class="progress-bar"></div>
+    </div>
+
+    <p class="status" id="statusText">Connecting to MDM servers...</p>
+
+    <!-- Manual launch button -->
+    <a href="https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec"
+       class="launch-btn" id="launchBtn">
+      🚀 Launch App
     </a>
+
+    <!-- PWA Install button (shown automatically on Android) -->
+    <button class="install-btn" id="installBtn" onclick="installPWA()">
+      📲 Install App on Device
+    </button>
+
+    <!-- iOS install hint -->
+    <div class="ios-hint" id="iosHint">
+      📱 <strong style="color:#60a5fa;">Install on iPhone/iPad:</strong><br>
+      Tap <strong style="color:#f1f5f9;">Share ⎙</strong> at the bottom of Safari,
+      then tap <strong style="color:#f1f5f9;">Add to Home Screen ➕</strong>
+    </div>
+
+    <div class="badges">
+      <span class="badge">⚡ DVVNL</span>
+      <span class="badge">🔒 Secured</span>
+      <span class="badge">📡 MDM</span>
+      <span class="badge">🛰️ Live</span>
+    </div>
   </div>
+
+  <p class="footer">Crafted by Atifsidd · MMS v2.0</p>
+
+  <script>
+    const APP_URL = "https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec";
+    const statusEl   = document.getElementById('statusText');
+    const installBtn = document.getElementById('installBtn');
+    const iosHint    = document.getElementById('iosHint');
+
+    // Status messages
+    const messages = [
+      { t: 400,  msg: "Connecting to MDM servers..." },
+      { t: 900,  msg: "Verifying configuration..."   },
+      { t: 1600, msg: "Loading dashboard..."          },
+      { t: 2200, msg: "Ready! Launching..."           },
+    ];
+
+    messages.forEach(({ t, msg }) => {
+      setTimeout(() => {
+        statusEl.textContent = msg;
+        statusEl.className = 'status active';
+      }, t);
+    });
+
+    // Auto redirect
+    setTimeout(() => { window.location.replace(APP_URL); }, 2600);
+
+    // ── PWA Install Logic ──────────────────────────────
+    let deferredPrompt = null;
+
+    // Android Chrome — capture install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.classList.add('visible');
+      console.log('[PWA] Install prompt captured');
+    });
+
+    function installPWA() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((result) => {
+        console.log('[PWA] User choice:', result.outcome);
+        if (result.outcome === 'accepted') {
+          installBtn.classList.remove('visible');
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    // iOS Safari — show hint
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+    if (isIOS && isSafari && !isStandalone) {
+      iosHint.classList.add('visible');
+    }
+
+    // Already installed — hide install UI
+    if (isStandalone) {
+      installBtn.classList.remove('visible');
+      iosHint.classList.remove('visible');
+    }
+
+    // ── Service Worker ─────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(r => console.log('[PWA] SW registered'))
+        .catch(e => console.log('[PWA] SW failed:', e.message));
+    }
+  </script>
 </body>
 </html>
