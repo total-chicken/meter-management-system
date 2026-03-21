@@ -1,0 +1,21 @@
+{
+  "name": "Meter Management System",
+  "short_name": "MMS",
+  "description": "DVVNL MDM Meter Management",
+  "start_url": "/meter-management-system/",
+  "scope": "/meter-management-system/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#060d1a",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "lang": "en"
+}
