@@ -296,22 +296,9 @@
     const iosHint    = document.getElementById('iosHint');
 
     // Status messages
-    const messages = [
-      { t: 400,  msg: "Connecting to MDM servers..." },
-      { t: 900,  msg: "Verifying configuration..."   },
-      { t: 1600, msg: "Loading dashboard..."          },
-      { t: 2200, msg: "Ready! Launching..."           },
-    ];
-
-    messages.forEach(({ t, msg }) => {
-      setTimeout(() => {
-        statusEl.textContent = msg;
-        statusEl.className = 'status active';
-      }, t);
-    });
-
-    // Auto redirect
-    //setTimeout(() => { window.location.replace(APP_URL); }, 2600);
+// Show ready status immediately — no auto redirect
+statusEl.textContent = 'Tap Launch App to open';
+statusEl.className = 'status active';
 
     // ── PWA Install Logic ──────────────────────────────
     let deferredPrompt = null;
