@@ -290,6 +290,32 @@
   <p class="footer">Crafted by Atifsidd · MMS v2.0</p>
 
   <script>
+    // Handle return from Apps Script update redirect
+(function() {
+    const params          = new URLSearchParams(window.location.search);
+    const redirectSession = localStorage.getItem('mms_redirect_session');
+    const redirectBack    = localStorage.getItem('mms_redirect_back');
+
+    if (params.get('from_update') === '1') {
+        // Restore session if available
+        if (redirectSession && redirectSession !== 'null' && redirectSession !== '') {
+            sessionStorage.setItem('mms_session', redirectSession);
+        }
+
+        // Clean up
+        localStorage.removeItem('mms_redirect_back');
+        localStorage.removeItem('mms_redirect_session');
+
+        // Redirect back immediately
+        const backUrl = redirectBack && redirectBack !== 'null'
+            ? redirectBack
+            : 'https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec';
+
+        window.location.replace(backUrl);
+        return; // Stop rest of GitHub page from loading
+    }
+})();
+    
     const APP_URL = "https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec";
     const statusEl   = document.getElementById('statusText');
     const installBtn = document.getElementById('installBtn');
