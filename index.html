@@ -15,333 +15,277 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
       background: #060d1a;
-      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #loadingScreen {
+      position: fixed;
+      inset: 0;
+      background: #060d1a;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-      overflow: hidden;
+      z-index: 9999;
+      transition: opacity 0.4s ease;
     }
 
-    .bg-orb {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.15;
+    #loadingScreen.fade-out {
+      opacity: 0;
       pointer-events: none;
-      z-index: 0;
-    }
-
-    .bg-orb-1 {
-      width: 400px; height: 400px;
-      background: #3b82f6;
-      top: -100px; left: -100px;
-      animation: float1 8s ease-in-out infinite;
-    }
-
-    .bg-orb-2 {
-      width: 300px; height: 300px;
-      background: #6366f1;
-      bottom: -80px; right: -80px;
-      animation: float2 10s ease-in-out infinite;
-    }
-
-    @keyframes float1 {
-      0%, 100% { transform: translate(0, 0); }
-      50%       { transform: translate(30px, -30px); }
-    }
-
-    @keyframes float2 {
-      0%, 100% { transform: translate(0, 0); }
-      50%       { transform: translate(-20px, 20px); }
-    }
-
-    .card {
-      position: relative;
-      z-index: 1;
-      background: rgba(15, 30, 51, 0.9);
-      border: 1px solid #1e3a5f;
-      border-radius: 24px;
-      padding: 40px 36px;
-      width: 100%;
-      max-width: 360px;
-      text-align: center;
-      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
-      backdrop-filter: blur(20px);
-      animation: cardIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    }
-
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(30px) scale(0.95); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .logo {
-      width: 76px; height: 76px;
+      width: 72px; height: 72px;
       background: linear-gradient(135deg, #3b82f6, #6366f1);
-      border-radius: 22px;
+      border-radius: 20px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 36px;
-      margin: 0 auto 24px;
+      font-size: 32px;
+      margin-bottom: 24px;
       box-shadow: 0 8px 32px rgba(59,130,246,0.4);
-      animation: logoPulse 3s ease-in-out infinite;
+      animation: pulse 2s ease-in-out infinite;
     }
 
-    @keyframes logoPulse {
+    @keyframes pulse {
       0%, 100% { box-shadow: 0 8px 32px rgba(59,130,246,0.4); }
       50%       { box-shadow: 0 8px 48px rgba(59,130,246,0.7); }
     }
 
     h1 {
-      font-size: 1.4rem;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 1.3rem;
       font-weight: 800;
       color: #f1f5f9;
-      letter-spacing: -0.02em;
       margin-bottom: 6px;
+      letter-spacing: -0.02em;
     }
 
-    .subtitle {
-      font-size: 0.72rem;
+    .sub {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.7rem;
       color: #475569;
-      letter-spacing: 0.08em;
       text-transform: uppercase;
+      letter-spacing: 0.08em;
       margin-bottom: 32px;
     }
 
     .progress-wrap {
+      width: 200px;
+      height: 3px;
       background: #0a1628;
       border-radius: 100px;
-      height: 4px;
-      margin-bottom: 12px;
       overflow: hidden;
-      border: 1px solid #1e3a5f;
+      margin-bottom: 12px;
     }
 
     .progress-bar {
       height: 100%;
       border-radius: 100px;
-      width: 0%;
-      background: linear-gradient(90deg, #3b82f6, #6366f1, #4db6a9);
-      background-size: 200% 100%;
-      animation: progressFill 2.5s ease forwards, shimmer 1.5s linear infinite;
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      animation: progress 2s ease forwards;
     }
 
-    @keyframes progressFill {
+    @keyframes progress {
       0%   { width: 0%; }
-      30%  { width: 45%; }
-      60%  { width: 75%; }
-      85%  { width: 90%; }
+      50%  { width: 70%; }
+      80%  { width: 90%; }
       100% { width: 100%; }
     }
 
-    @keyframes shimmer {
-      0%   { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
     .status {
+      font-family: 'Segoe UI', system-ui, sans-serif;
       font-size: 0.72rem;
-      color: #475569;
-      margin-bottom: 28px;
-      min-height: 18px;
-      transition: color 0.3s;
-    }
-
-    .status.active { color: #60a5fa; }
-
-    .launch-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 13px 28px;
-      background: linear-gradient(135deg, #3b82f6, #6366f1);
-      color: white;
-      text-decoration: none;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(59,130,246,0.35);
-      transition: all 0.2s;
-      margin-bottom: 16px;
-      width: 100%;
-      justify-content: center;
-    }
-
-    .launch-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(59,130,246,0.5);
-    }
-
-    /* Install button */
-    .install-btn {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 11px 28px;
-      background: transparent;
       color: #60a5fa;
-      border: 1px solid #1e3a5f;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+    }
+
+    #appFrame {
+      position: fixed;
+      inset: 0;
       width: 100%;
-      justify-content: center;
-      margin-bottom: 16px;
+      height: 100%;
+      border: none;
+      display: block;
+      z-index: 1;
     }
 
-    .install-btn:hover {
-      background: #0f2847;
-      border-color: #3b82f6;
-    }
-
-    .install-btn.visible { display: inline-flex; }
-
-    /* iOS install hint */
-    .ios-hint {
+    #installBtn {
       display: none;
-      background: #071020;
-      border: 1px solid #1e3a5f;
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-bottom: 16px;
-      font-size: 0.72rem;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f1e33;
+      border: 1px solid #3b82f6;
+      border-radius: 14px;
+      padding: 12px 20px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #60a5fa;
+      cursor: pointer;
+      z-index: 99999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      animation: slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    #installBtn.visible { display: flex; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    #iosHint {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0; right: 0;
+      background: #0f1e33;
+      border-top: 2px solid #3b82f6;
+      padding: 16px 20px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.76rem;
       color: #94a3b8;
       line-height: 1.6;
-      text-align: left;
+      z-index: 99999;
+      text-align: center;
     }
 
-    .ios-hint.visible { display: block; }
+    #iosHint.visible { display: block; }
 
-    .badges {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
-
-    .badge {
-      padding: 4px 10px;
-      background: #071020;
-      border: 1px solid #1e3a5f;
-      border-radius: 100px;
-      font-size: 0.63rem;
-      color: #334155;
-    }
-
-    .footer {
-      position: relative;
-      z-index: 1;
-      margin-top: 20px;
-      font-size: 0.63rem;
-      color: #1e3a5f;
+    #iosHintClose {
+      position: absolute;
+      top: 10px; right: 14px;
+      background: none;
+      border: none;
+      color: #475569;
+      font-size: 18px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <div class="bg-orb bg-orb-1"></div>
-  <div class="bg-orb bg-orb-2"></div>
-
-  <div class="card">
-    <div class="logo">⚡</div>
-    <h1>Meter Management</h1>
-    <p class="subtitle">DVVNL · MDM System · v2.0</p>
-
-    <div class="progress-wrap">
-      <div class="progress-bar"></div>
-    </div>
-
-    <p class="status" id="statusText">Connecting to MDM servers...</p>
-
-    <!-- Manual launch button -->
-    <a href="https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec"
-       class="launch-btn" id="launchBtn">
-      🚀 Launch App
-    </a>
-
-    <!-- PWA Install button (shown automatically on Android) -->
-    <button class="install-btn" id="installBtn" onclick="installPWA()">
-      📲 Install App on Device
-    </button>
-
-    <!-- iOS install hint -->
-    <div class="ios-hint" id="iosHint">
-      📱 <strong style="color:#60a5fa;">Install on iPhone/iPad:</strong><br>
-      Tap <strong style="color:#f1f5f9;">Share ⎙</strong> at the bottom of Safari,
-      then tap <strong style="color:#f1f5f9;">Add to Home Screen ➕</strong>
-    </div>
-
-    <div class="badges">
-      <span class="badge">⚡ DVVNL</span>
-      <span class="badge">🔒 Secured</span>
-      <span class="badge">📡 MDM</span>
-      <span class="badge">🛰️ Live</span>
-    </div>
-  </div>
-
-  <p class="footer">Crafted by Atifsidd · MMS v2.0</p>
-
+  <!-- Handle update redirect FIRST before anything renders -->
   <script>
-    // Handle return from Apps Script update redirect
-(function() {
-    const params          = new URLSearchParams(window.location.search);
-    const redirectSession = localStorage.getItem('mms_redirect_session');
-    const redirectBack    = localStorage.getItem('mms_redirect_back');
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('from_update') === '1') {
+        const redirectBack    = localStorage.getItem('mms_redirect_back');
+        const redirectSession = localStorage.getItem('mms_redirect_session');
 
-    if (params.get('from_update') === '1') {
-        // Restore session if available
         if (redirectSession && redirectSession !== 'null' && redirectSession !== '') {
-            sessionStorage.setItem('mms_session', redirectSession);
+          sessionStorage.setItem('mms_session', redirectSession);
         }
 
-        // Clean up
         localStorage.removeItem('mms_redirect_back');
         localStorage.removeItem('mms_redirect_session');
 
-        // Redirect back immediately
         const backUrl = redirectBack && redirectBack !== 'null'
-            ? redirectBack
-            : 'https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec';
+          ? redirectBack
+          : 'https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec';
 
         window.location.replace(backUrl);
-        return; // Stop rest of GitHub page from loading
-    }
-})();
-    
-    const APP_URL = "https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec";
-    const statusEl   = document.getElementById('statusText');
+      }
+    })();
+  </script>
+
+  <!-- Loading screen -->
+  <div id="loadingScreen">
+    <div class="logo">⚡</div>
+    <h1>Meter Management</h1>
+    <p class="sub">DVVNL · MDM System · v2.0</p>
+    <div class="progress-wrap">
+      <div class="progress-bar"></div>
+    </div>
+    <p class="status" id="statusText">Connecting to MDM servers...</p>
+  </div>
+
+  <!-- Full screen iframe — no banner appears here -->
+  <iframe
+    id="appFrame"
+    src="https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec"
+    allow="clipboard-read; clipboard-write"
+    sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
+  ></iframe>
+
+  <!-- PWA Install button -->
+  <button id="installBtn" onclick="installPWA()">
+    📲 Install MMS App
+  </button>
+
+  <!-- iOS install hint -->
+  <div id="iosHint">
+    <button id="iosHintClose" onclick="closeIOSHint()">×</button>
+    📱 <strong style="color:#60a5fa;">Install on iPhone:</strong>
+    Tap <strong style="color:#f1f5f9;">Share ⎙</strong> then
+    <strong style="color:#f1f5f9;">Add to Home Screen ➕</strong>
+  </div>
+
+  <script>
+    const APP_URL    = "https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec";
+    const loading    = document.getElementById('loadingScreen');
+    const statusText = document.getElementById('statusText');
+    const appFrame   = document.getElementById('appFrame');
     const installBtn = document.getElementById('installBtn');
     const iosHint    = document.getElementById('iosHint');
 
-    // Status messages
-// Show ready status immediately — no auto redirect
-statusEl.textContent = 'Tap Launch App to open';
-statusEl.className = 'status active';
+    // Cycle status messages while iframe loads
+    const messages = [
+      'Connecting to MDM servers...',
+      'Verifying configuration...',
+      'Loading dashboard...'
+    ];
+    let msgIndex = 0;
+    const msgInterval = setInterval(function() {
+      msgIndex = (msgIndex + 1) % messages.length;
+      statusText.textContent = messages[msgIndex];
+    }, 900);
 
-    // ── PWA Install Logic ──────────────────────────────
-    let deferredPrompt = null;
+    // Hide loading screen when iframe finishes loading
+    appFrame.addEventListener('load', function() {
+      clearInterval(msgInterval);
+      statusText.textContent = 'Ready!';
+      setTimeout(function() {
+        loading.classList.add('fade-out');
+        setTimeout(function() {
+          loading.style.display = 'none';
+        }, 400);
+      }, 300);
+    });
 
-    // Android Chrome — capture install prompt
-    window.addEventListener('beforeinstallprompt', (e) => {
+    // Fallback — hide loading after 8 seconds
+    setTimeout(function() {
+      loading.classList.add('fade-out');
+      setTimeout(function() { loading.style.display = 'none'; }, 400);
+    }, 8000);
+
+    // ── PWA Install ────────────────────────────────────
+    var deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
-      installBtn.classList.add('visible');
-      console.log('[PWA] Install prompt captured');
+      setTimeout(function() {
+        installBtn.classList.add('visible');
+        setTimeout(function() {
+          installBtn.classList.remove('visible');
+        }, 15000);
+      }, 3000);
     });
 
     function installPWA() {
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((result) => {
-        console.log('[PWA] User choice:', result.outcome);
+      deferredPrompt.userChoice.then(function(result) {
         if (result.outcome === 'accepted') {
           installBtn.classList.remove('visible');
         }
@@ -349,26 +293,31 @@ statusEl.className = 'status active';
       });
     }
 
-    // iOS Safari — show hint
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-
-    if (isIOS && isSafari && !isStandalone) {
-      iosHint.classList.add('visible');
-    }
-
-    // Already installed — hide install UI
-    if (isStandalone) {
+    window.addEventListener('appinstalled', function() {
       installBtn.classList.remove('visible');
-      iosHint.classList.remove('visible');
+    });
+
+    // iOS
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+    if (isIOS && isSafari && !isStandalone && !localStorage.getItem('ios_hint_dismissed')) {
+      setTimeout(function() {
+        iosHint.classList.add('visible');
+      }, 4000);
     }
 
-    // ── Service Worker ─────────────────────────────────
+    function closeIOSHint() {
+      iosHint.classList.remove('visible');
+      localStorage.setItem('ios_hint_dismissed', '1');
+    }
+
+    // ── Service Worker ──────────────────────────────────
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js')
-        .then(r => console.log('[PWA] SW registered'))
-        .catch(e => console.log('[PWA] SW failed:', e.message));
+        .then(function(r) { console.log('[PWA] SW registered'); })
+        .catch(function(e) { console.log('[PWA] SW failed:', e.message); });
     }
   </script>
 </body>
