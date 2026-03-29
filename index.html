@@ -12,14 +12,20 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon.svg">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: #060d1a;
-      margin: 0; padding: 0;
+    /* ── Critical: disable browser pull-to-refresh in PWA ── */
+    html, body {
+      overscroll-behavior: none;
+      overscroll-behavior-y: none;
+      -webkit-overflow-scrolling: touch;
       overflow: hidden;
       width: 100vw; height: 100vh;
+      margin: 0; padding: 0;
+      touch-action: none;
     }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { background: #060d1a; }
 
     /* ── iframe fills everything ───────────────────── */
     #appFrame {
@@ -28,37 +34,30 @@
       width: 100%; height: 100%;
       border: none; display: block;
       z-index: 1;
+      touch-action: auto; /* iframe needs its own touch handling */
     }
 
-    /*
-      THIN ALWAYS-VISIBLE STRIP at the very top.
-      pointer-events:auto so it always receives touchstart.
-      Only 8px tall — invisible to user but catches the
-      finger before the iframe does.
-    */
+    /* ── 30px strip — always catches touchstart ─────── */
     #ptrStrip {
       position: fixed;
       top: 0; left: 0; right: 0;
-      height: 8px;
-      z-index: 50;
+      height: 30px;
+      z-index: 500;
       background: transparent;
       pointer-events: auto;
-      touch-action: none;
+      touch-action: pan-down;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    /*
-      Full-screen gesture lock overlay.
-      Created dynamically once a pull is detected.
-      Sits above the iframe so touch events stay with us
-      for the rest of the drag, then removed on touchend.
-    */
+    /* ── Full-screen lock during drag ───────────────── */
     #ptrLock {
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 49;
+      z-index: 499;
       background: transparent;
       touch-action: none;
+      pointer-events: auto;
     }
     #ptrLock.active { display: block; }
 
@@ -66,19 +65,19 @@
     #ptrPill {
       position: fixed;
       top: 0; left: 50%;
-      transform: translateX(-50%) translateY(-100px);
-      z-index: 200;
+      transform: translateX(-50%) translateY(-110px);
+      z-index: 600;
       pointer-events: none;
       background: #0f1e33;
       border: 1px solid #1e3a5f;
       border-top: none;
-      border-radius: 0 0 20px 20px;
-      padding: 8px 24px 12px;
+      border-radius: 0 0 22px 22px;
+      padding: 10px 28px 14px;
       display: flex; flex-direction: column;
-      align-items: center; gap: 4px;
-      min-width: 160px;
+      align-items: center; gap: 5px;
+      min-width: 170px;
+      will-change: transform;
     }
-
     .pill-icon {
       font-size: 20px; line-height: 1;
     }
@@ -92,20 +91,19 @@
     }
     .pill-text {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 0.65rem; font-weight: 700;
-      color: #60a5fa; letter-spacing: 0.05em;
-      white-space: nowrap;
+      font-size: 0.67rem; font-weight: 700;
+      color: #60a5fa; letter-spacing: 0.05em; white-space: nowrap;
     }
     .pill-track {
       width: 100%; height: 2px;
       background: #1e3a5f; border-radius: 2px;
-      overflow: hidden; margin-top: 3px;
+      overflow: hidden; margin-top: 4px;
     }
     .pill-fill {
       height: 100%;
       background: linear-gradient(90deg, #3b82f6, #6366f1);
-      border-radius: 2px;
-      width: 0%;
+      border-radius: 2px; width: 0%;
+      transition: width 0.08s linear;
     }
 
     /* ── Refresh overlay ───────────────────────────── */
@@ -160,8 +158,7 @@
     .sub {
       font-family: 'Segoe UI', system-ui, sans-serif;
       font-size: 0.7rem; color: #475569;
-      text-transform: uppercase; letter-spacing: 0.08em;
-      margin-bottom: 32px;
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 32px;
     }
     .progress-wrap {
       width: 200px; height: 3px;
@@ -247,10 +244,10 @@
     sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
   ></iframe>
 
-  <!-- 8px strip that always captures touchstart at the top -->
+  <!-- 30px strip always above the iframe -->
   <div id="ptrStrip"></div>
 
-  <!-- Full-screen lock overlay (activated during drag) -->
+  <!-- Full-screen lock (transparent, active during drag) -->
   <div id="ptrLock"></div>
 
   <!-- Pull pill -->
@@ -278,7 +275,7 @@
   </div>
 
   <script>
-    /* ── refs ──────────────────────────────────────────── */
+    /* ── refs ─────────────────────────────────────────── */
     var loading        = document.getElementById('loadingScreen');
     var statusText     = document.getElementById('statusText');
     var appFrame       = document.getElementById('appFrame');
@@ -292,7 +289,7 @@
     var installBtn     = document.getElementById('installBtn');
     var iosHint        = document.getElementById('iosHint');
 
-    /* ── Loading screen ────────────────────────────────── */
+    /* ── Loading screen ───────────────────────────────── */
     var msgs=['Connecting to MDM servers...','Verifying configuration...','Loading dashboard...'];
     var mi=0;
     var mt=setInterval(function(){ statusText.textContent=msgs[++mi%msgs.length]; },900);
@@ -308,7 +305,7 @@
       setTimeout(function(){ loading.style.display='none'; },400);
     },8000);
 
-    /* ── PWA install ───────────────────────────────────── */
+    /* ── PWA install ──────────────────────────────────── */
     var dp=null;
     window.addEventListener('beforeinstallprompt',function(e){
       e.preventDefault(); dp=e;
@@ -325,7 +322,7 @@
     }
     window.addEventListener('appinstalled',function(){ installBtn.classList.remove('visible'); });
 
-    /* ── iOS hint ──────────────────────────────────────── */
+    /* ── iOS hint ─────────────────────────────────────── */
     var isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
     var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     var isStand  = window.matchMedia('(display-mode: standalone)').matches;
@@ -336,30 +333,38 @@
       localStorage.setItem('ios_hint_dismissed','1');
     }
 
-    /* ── Service worker ────────────────────────────────── */
+    /* ── Service worker ───────────────────────────────── */
     if('serviceWorker' in navigator)
       navigator.serviceWorker.register('sw.js').catch(function(){});
 
-    /* ════════════════════════════════════════════════════
-       PULL-TO-REFRESH
-       ────────────────────────────────────────────────────
-       The 8-px #ptrStrip always sits above the iframe and
-       always has pointer-events:auto, so it reliably catches
-       touchstart before the iframe.
+    /* ═══════════════════════════════════════════════════
+       PULL-TO-REFRESH — works in browser AND installed PWA
+       ───────────────────────────────────────────────────
+       Key fixes for PWA standalone mode:
 
-       Once a downward drag starts we activate #ptrLock —
-       a transparent full-screen overlay (z-index 49, below
-       the strip but above the iframe) that owns the rest of
-       the touch sequence. This prevents the iframe from ever
-       receiving the touchmove/touchend.
+       1. overscroll-behavior:none on html+body stops Chrome
+          Android from intercepting the gesture as its own
+          pull-to-refresh before our code sees it.
 
-       On touchend we deactivate ptrLock immediately.
-    ════════════════════════════════════════════════════ */
+       2. #ptrStrip is 30px, pointer-events:auto, touch-action:
+          pan-down — it always receives touchstart because it
+          sits above the iframe in z-index.
+
+       3. On first confirmed downward move we activate #ptrLock
+          (full-screen transparent overlay, touch-action:none)
+          which takes ownership of the rest of the gesture and
+          calls preventDefault() on every touchmove — this
+          blocks both the iframe scroll AND Chrome's PTR.
+
+       4. We store the touch identifier from touchstart and
+          match it on subsequent events to avoid phantom
+          multi-touch issues.
+    ═══════════════════════════════════════════════════ */
     (function(){
 
-      var TRIGGER    = 75;   /* px to trigger */
-      var MAX_VISUAL = 100;  /* max pill travel */
-      var DAMPEN     = 0.55; /* drag resistance */
+      var TRIGGER    = 72;   /* px pull needed to trigger */
+      var MAX_VISUAL = 105;  /* max pill travel in px     */
+      var DAMPEN     = 0.52; /* drag feel resistance      */
 
       var startY     = 0;
       var startId    = -1;
@@ -367,25 +372,37 @@
       var refreshing = false;
       var triggered  = false;
 
-      /* ── touchstart on the 8-px strip ──────────────── */
+      /* ── Prevent browser's own PTR on document level ── */
+      /* This fires before the iframe intercepts anything  */
+      document.addEventListener('touchmove', function(e){
+        if(pulling && e.cancelable) e.preventDefault();
+      }, { passive: false });
+
+      /* ── touchstart on the 30-px strip ─────────────── */
       ptrStrip.addEventListener('touchstart', function(e){
         if(refreshing) return;
-        var t = e.changedTouches[0];
-        startY  = t.clientY;
-        startId = t.identifier;
-        pulling = false;
+        var t    = e.changedTouches[0];
+        startY   = t.clientY;
+        startId  = t.identifier;
+        pulling  = false;
         triggered = false;
       }, { passive: true });
 
-      /* ── touchmove — non-passive on ptrLock so we can
-            preventDefault and own the scroll              */
-      ptrLock.addEventListener('touchmove', onMove, { passive: false });
-      /* Also catch move on the strip itself */
+      /* Also catch touchstart that bleeds onto ptrLock    */
+      ptrLock.addEventListener('touchstart', function(e){
+        /* Only if we already started on the strip         */
+        if(startId === -1) return;
+      }, { passive: true });
+
+      /* ── touchmove — non-passive on both elements ───── */
       ptrStrip.addEventListener('touchmove', onMove, { passive: false });
+      ptrLock.addEventListener('touchmove',  onMove, { passive: false });
 
       function onMove(e){
         if(refreshing) return;
+        if(startId === -1) return;
 
+        /* Find our touch */
         var t = null;
         for(var i=0;i<e.changedTouches.length;i++){
           if(e.changedTouches[i].identifier===startId){
@@ -395,44 +412,44 @@
         if(!t) return;
 
         var dy = t.clientY - startY;
-        if(dy <= 1) return; /* not moving down */
+        if(dy <= 1) return;
 
-        /* First confirmed downward movement — activate lock */
+        /* Confirmed downward move — activate full screen lock */
         if(!pulling){
           pulling = true;
           ptrLock.classList.add('active');
         }
 
-        /* Prevent browser pull-to-refresh and iframe scroll */
+        /* Own this gesture — stop browser PTR + iframe scroll */
         if(e.cancelable) e.preventDefault();
 
-        var pull = Math.min(dy * DAMPEN, MAX_VISUAL);
-        var pct  = Math.min(pull / TRIGGER, 1);
-
-        /* Move pill */
+        var pull  = Math.min(dy * DAMPEN, MAX_VISUAL);
+        var pct   = Math.min(pull / TRIGGER, 1);
         var pillY = Math.min(pull - 6, MAX_VISUAL - 6);
+
+        /* Animate pill */
         ptrPill.style.transition = 'none';
         ptrPill.style.transform  =
           'translateX(-50%) translateY(' + pillY + 'px)';
-
-        /* Progress bar */
         pillFill.style.width = Math.round(pct * 100) + '%';
 
         if(pull >= TRIGGER){
-          pillIcon.textContent = '↑';
+          pillIcon.textContent     = '↑';
           pillIcon.style.transform = 'none';
-          pillText.textContent = 'Release to refresh';
+          pillText.textContent     = 'Release to refresh';
           triggered = true;
         } else {
-          pillIcon.textContent = '↓';
+          pillIcon.textContent     = '↓';
           pillIcon.style.transform = 'none';
-          pillText.textContent = 'Pull down to refresh';
+          pillText.textContent     = 'Pull down to refresh';
           triggered = false;
         }
       }
 
-      /* ── touchend ───────────────────────────────────── */
+      /* ── touchend / touchcancel ─────────────────────── */
       function onEnd(e){
+        if(startId === -1) return;
+
         /* Check it's our touch */
         var found = false;
         for(var i=0;i<e.changedTouches.length;i++){
@@ -440,13 +457,14 @@
             found=true; break;
           }
         }
-        if(!found && pulling === false) return;
+        /* On touchcancel changedTouches may be empty — treat as ours anyway */
+        if(!found && e.type!=='touchcancel' && !pulling){ return; }
 
-        ptrLock.classList.remove('active'); /* release lock immediately */
-
-        if(!pulling){ startId=-1; return; }
-        pulling = false;
+        ptrLock.classList.remove('active');
         startId = -1;
+
+        if(!pulling){ return; }
+        pulling = false;
 
         if(triggered){
           doRefresh();
@@ -455,41 +473,36 @@
         }
       }
 
-      ptrLock.addEventListener('touchend',    onEnd, { passive: true });
-      ptrLock.addEventListener('touchcancel', onEnd, { passive: true });
       ptrStrip.addEventListener('touchend',    onEnd, { passive: true });
       ptrStrip.addEventListener('touchcancel', onEnd, { passive: true });
+      ptrLock.addEventListener('touchend',     onEnd, { passive: true });
+      ptrLock.addEventListener('touchcancel',  onEnd, { passive: true });
 
       /* ── Snap pill back ─────────────────────────────── */
       function snapBack(){
         ptrPill.style.transition = 'transform 0.3s ease';
-        ptrPill.style.transform  = 'translateX(-50%) translateY(-100px)';
+        ptrPill.style.transform  = 'translateX(-50%) translateY(-110px)';
         pillFill.style.width = '0%';
         setTimeout(resetPill, 350);
       }
 
-      /* ── Execute refresh ────────────────────────────── */
+      /* ── Do the refresh ─────────────────────────────── */
       function doRefresh(){
         refreshing = true;
 
-        /* Pill shows spinner */
         pillIcon.textContent = '↻';
         pillIcon.className   = 'pill-icon spinning';
         pillText.textContent = 'Refreshing...';
         pillFill.style.width = '100%';
 
         setTimeout(function(){
-          /* Slide pill away */
           ptrPill.style.transition = 'transform 0.3s ease';
-          ptrPill.style.transform  = 'translateX(-50%) translateY(-100px)';
+          ptrPill.style.transform  = 'translateX(-50%) translateY(-110px)';
 
-          /* Show dark overlay */
           refreshOverlay.classList.add('on');
 
-          /* Reload the iframe */
           appFrame.src = appFrame.src;
 
-          /* Wait for load event */
           function onLoad(){
             appFrame.removeEventListener('load', onLoad);
             refreshOverlay.classList.remove('on');
@@ -499,7 +512,6 @@
           }
           appFrame.addEventListener('load', onLoad);
 
-          /* Safety: give up after 15 s */
           setTimeout(function(){
             if(!refreshing) return;
             appFrame.removeEventListener('load', onLoad);
@@ -513,14 +525,14 @@
       }
 
       function resetPill(){
-        pillIcon.textContent   = '↓';
-        pillIcon.className     = 'pill-icon';
+        pillIcon.textContent     = '↓';
+        pillIcon.className       = 'pill-icon';
         pillIcon.style.transform = 'none';
-        pillText.textContent   = 'Pull down to refresh';
-        triggered              = false;
+        pillText.textContent     = 'Pull down to refresh';
+        triggered                = false;
       }
 
-    })(); /* end PTR IIFE */
+    })();
   </script>
 </body>
 </html>
