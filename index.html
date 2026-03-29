@@ -111,6 +111,98 @@
       border: none;
       display: block;
       z-index: 1;
+      transition: transform 0.15s ease;
+    }
+
+    /* ── Pull-to-refresh indicator ─────────────────────── */
+    #ptrIndicator {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      z-index: 99998;
+      background: #0f1e33;
+      border: 1px solid #1e3a5f;
+      border-radius: 0 0 20px 20px;
+      padding: 10px 20px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.2s ease;
+      pointer-events: none;
+      min-width: 140px;
+    }
+
+    #ptrIndicator.pulling {
+      /* position updated by JS — no CSS transition while dragging */
+      transition: none;
+    }
+
+    #ptrIndicator.releasing {
+      transform: translateX(-50%) translateY(0px);
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    #ptrIndicator.hiding {
+      transform: translateX(-50%) translateY(-80px);
+      transition: transform 0.3s ease;
+    }
+
+    .ptr-icon {
+      font-size: 20px;
+      transition: transform 0.2s ease;
+      line-height: 1;
+    }
+
+    .ptr-icon.rotate {
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .ptr-label {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.68rem;
+      color: #60a5fa;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    /* ── Refresh overlay shown while iframe reloads ──── */
+    #refreshOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #060d1a;
+      z-index: 9998;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    #refreshOverlay.visible {
+      display: flex;
+    }
+
+    .refresh-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #1e3a5f;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .refresh-label {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.78rem;
+      color: #60a5fa;
+      font-weight: 600;
     }
 
     #installBtn {
@@ -209,7 +301,19 @@
     <p class="status" id="statusText">Connecting to MDM servers...</p>
   </div>
 
-  <!-- Full screen iframe — no banner appears here -->
+  <!-- Pull-to-refresh indicator -->
+  <div id="ptrIndicator">
+    <div class="ptr-icon" id="ptrIcon">↓</div>
+    <div class="ptr-label" id="ptrLabel">Pull to refresh</div>
+  </div>
+
+  <!-- Refresh overlay shown while iframe reloads -->
+  <div id="refreshOverlay">
+    <div class="refresh-spinner"></div>
+    <div class="refresh-label">Refreshing...</div>
+  </div>
+
+  <!-- Full screen iframe -->
   <iframe
     id="appFrame"
     src="https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec"
@@ -319,6 +423,160 @@
         .then(function(r) { console.log('[PWA] SW registered'); })
         .catch(function(e) { console.log('[PWA] SW failed:', e.message); });
     }
+
+    // ══════════════════════════════════════════════════
+    //  PULL-TO-REFRESH
+    // ══════════════════════════════════════════════════
+    (function() {
+      var ptrIndicator = document.getElementById('ptrIndicator');
+      var ptrIcon      = document.getElementById('ptrIcon');
+      var ptrLabel     = document.getElementById('ptrLabel');
+      var refreshOverlay = document.getElementById('refreshOverlay');
+
+      // Thresholds
+      var TRIGGER_THRESHOLD = 80;   // px of pull needed to trigger refresh
+      var MAX_PULL          = 120;  // max px the indicator travels down
+
+      // State
+      var touchStartY   = 0;
+      var touchStartX   = 0;
+      var currentPull   = 0;
+      var isPulling     = false;
+      var isRefreshing  = false;
+      var triggered     = false;
+
+      // Only activate when the touch starts within the top 60px of the screen
+      // This avoids interfering with scrolling inside the iframe content
+      var TOP_ZONE = 60;
+
+      document.addEventListener('touchstart', function(e) {
+        if (isRefreshing) return;
+        var touch = e.touches[0];
+        touchStartY = touch.clientY;
+        touchStartX = touch.clientX;
+        isPulling   = false;
+        triggered   = false;
+        currentPull = 0;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function(e) {
+        if (isRefreshing) return;
+
+        var touch    = e.touches[0];
+        var deltaY   = touch.clientY - touchStartY;
+        var deltaX   = touch.clientX - touchStartX;
+
+        // Only activate if:
+        // 1. Touch started in the top zone
+        // 2. Pulling downward (positive deltaY)
+        // 3. More vertical than horizontal (not a side-swipe)
+        if (touchStartY > TOP_ZONE) return;
+        if (deltaY <= 0) return;
+        if (Math.abs(deltaX) > Math.abs(deltaY) * 0.8) return;
+
+        isPulling   = true;
+        currentPull = Math.min(deltaY * 0.5, MAX_PULL); // dampen the pull
+
+        // Move indicator into view
+        var indicatorY = Math.min(currentPull - 10, MAX_PULL - 10);
+        ptrIndicator.style.transform =
+          'translateX(-50%) translateY(' + indicatorY + 'px)';
+        ptrIndicator.classList.add('pulling');
+        ptrIndicator.classList.remove('releasing', 'hiding');
+
+        if (currentPull >= TRIGGER_THRESHOLD) {
+          // Ready to release
+          ptrIcon.textContent  = '↑';
+          ptrIcon.style.transform = 'rotate(180deg)';
+          ptrLabel.textContent = 'Release to refresh';
+          triggered = true;
+        } else {
+          // Still pulling
+          var progress = Math.round((currentPull / TRIGGER_THRESHOLD) * 100);
+          ptrIcon.textContent     = '↓';
+          ptrIcon.style.transform = 'rotate(0deg)';
+          ptrLabel.textContent    = 'Pull to refresh (' + progress + '%)';
+          triggered = false;
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', function() {
+        if (!isPulling) return;
+        isPulling = false;
+
+        if (triggered) {
+          // Snap indicator to visible position and start refresh
+          ptrIcon.textContent     = '🔄';
+          ptrIcon.style.transform = 'rotate(0deg)';
+          ptrIcon.classList.add('rotate');
+          ptrLabel.textContent    = 'Refreshing...';
+          ptrIndicator.classList.remove('pulling');
+          ptrIndicator.classList.add('releasing');
+          ptrIndicator.style.transform = 'translateX(-50%) translateY(10px)';
+
+          doRefresh();
+        } else {
+          // Snap back — not enough pull
+          ptrIndicator.style.transform = '';
+          ptrIndicator.classList.remove('pulling');
+          ptrIndicator.classList.add('hiding');
+          setTimeout(function() {
+            ptrIndicator.classList.remove('hiding');
+            resetPTR();
+          }, 350);
+        }
+      }, { passive: true });
+
+      function doRefresh() {
+        isRefreshing = true;
+
+        // Short delay so user sees the "Refreshing..." state
+        setTimeout(function() {
+          // Hide indicator
+          ptrIndicator.style.transform = '';
+          ptrIndicator.classList.remove('releasing', 'pulling');
+          ptrIndicator.classList.add('hiding');
+
+          // Show full-screen overlay while iframe reloads
+          refreshOverlay.classList.add('visible');
+
+          // Reload the iframe
+          appFrame.src = appFrame.src;
+
+          // Hide overlay once iframe finishes loading
+          appFrame.onload = function() {
+            refreshOverlay.classList.remove('visible');
+            isRefreshing = false;
+            resetPTR();
+
+            // Restore normal load handler
+            appFrame.onload = null;
+          };
+
+          // Safety fallback — hide overlay after 12 seconds
+          setTimeout(function() {
+            if (isRefreshing) {
+              refreshOverlay.classList.remove('visible');
+              isRefreshing = false;
+              resetPTR();
+            }
+          }, 12000);
+
+        }, 400);
+      }
+
+      function resetPTR() {
+        ptrIcon.textContent     = '↓';
+        ptrIcon.style.transform = 'rotate(0deg)';
+        ptrIcon.classList.remove('rotate');
+        ptrLabel.textContent    = 'Pull to refresh';
+        triggered               = false;
+        currentPull             = 0;
+      }
+
+    })();
+    // ══════════════════════════════════════════════════
+
   </script>
 </body>
 </html>
