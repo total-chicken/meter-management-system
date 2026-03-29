@@ -23,6 +23,7 @@
       height: 100vh;
     }
 
+    /* ── Loading screen ───────────────────────────────── */
     #loadingScreen {
       position: fixed;
       inset: 0;
@@ -34,11 +35,7 @@
       z-index: 9999;
       transition: opacity 0.4s ease;
     }
-
-    #loadingScreen.fade-out {
-      opacity: 0;
-      pointer-events: none;
-    }
+    #loadingScreen.fade-out { opacity: 0; pointer-events: none; }
 
     .logo {
       width: 72px; height: 72px;
@@ -48,244 +45,178 @@
       font-size: 32px;
       margin-bottom: 24px;
       box-shadow: 0 8px 32px rgba(59,130,246,0.4);
-      animation: pulse 2s ease-in-out infinite;
+      animation: logoPulse 2s ease-in-out infinite;
     }
-
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 8px 32px rgba(59,130,246,0.4); }
-      50%       { box-shadow: 0 8px 48px rgba(59,130,246,0.7); }
+    @keyframes logoPulse {
+      0%,100% { box-shadow: 0 8px 32px rgba(59,130,246,0.4); }
+      50%     { box-shadow: 0 8px 48px rgba(59,130,246,0.7); }
     }
 
     h1 {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 1.3rem;
-      font-weight: 800;
-      color: #f1f5f9;
-      margin-bottom: 6px;
-      letter-spacing: -0.02em;
+      font-size: 1.3rem; font-weight: 800;
+      color: #f1f5f9; margin-bottom: 6px; letter-spacing: -0.02em;
     }
-
     .sub {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 0.7rem;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 32px;
+      font-size: 0.7rem; color: #475569;
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 32px;
     }
-
     .progress-wrap {
-      width: 200px;
-      height: 3px;
-      background: #0a1628;
-      border-radius: 100px;
-      overflow: hidden;
-      margin-bottom: 12px;
+      width: 200px; height: 3px;
+      background: #0a1628; border-radius: 100px;
+      overflow: hidden; margin-bottom: 12px;
     }
-
     .progress-bar {
-      height: 100%;
-      border-radius: 100px;
+      height: 100%; border-radius: 100px;
       background: linear-gradient(90deg, #3b82f6, #6366f1);
-      animation: progress 2s ease forwards;
+      animation: prog 2s ease forwards;
     }
-
-    @keyframes progress {
-      0%   { width: 0%; }
-      50%  { width: 70%; }
-      80%  { width: 90%; }
-      100% { width: 100%; }
+    @keyframes prog {
+      0%{width:0%} 50%{width:70%} 80%{width:90%} 100%{width:100%}
     }
-
     .status {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 0.72rem;
-      color: #60a5fa;
+      font-size: 0.72rem; color: #60a5fa;
     }
 
+    /* ── App iframe ───────────────────────────────────── */
     #appFrame {
       position: fixed;
       inset: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
+      width: 100%; height: 100%;
+      border: none; display: block;
       z-index: 1;
-      transition: transform 0.15s ease;
     }
 
-    /* ── Pull-to-refresh indicator ─────────────────────── */
-    #ptrIndicator {
+    /* ── Touch capture strip — sits ABOVE the iframe ──── */
+    /* Only covers the top 70px. Passes pointer-events to
+       iframe when not actively tracking a pull gesture.   */
+    #touchCapture {
       position: fixed;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%) translateY(-80px);
-      z-index: 99998;
+      top: 0; left: 0; right: 0;
+      height: 70px;
+      z-index: 100;
+      /* transparent — invisible to user */
+      background: transparent;
+      /* pointer-events ACTIVE by default so it captures
+         touchstart. We disable it during normal use so
+         taps/scrolls reach the iframe. Set via JS.        */
+      pointer-events: auto;
+      /* Allow touch but block mouse so desktop clicks pass through */
+      touch-action: pan-down;
+    }
+
+    /* ── Pull-to-refresh pill ─────────────────────────── */
+    #ptrPill {
+      position: fixed;
+      top: 0; left: 50%;
+      transform: translateX(-50%) translateY(-90px);
+      z-index: 200;
       background: #0f1e33;
       border: 1px solid #1e3a5f;
-      border-radius: 0 0 20px 20px;
-      padding: 10px 20px 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      transition: transform 0.2s ease;
+      border-radius: 0 0 22px 22px;
+      padding: 10px 22px 13px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 5px;
       pointer-events: none;
-      min-width: 140px;
+      min-width: 150px;
     }
-
-    #ptrIndicator.pulling {
-      /* position updated by JS — no CSS transition while dragging */
-      transition: none;
-    }
-
-    #ptrIndicator.releasing {
-      transform: translateX(-50%) translateY(0px);
-      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
-    }
-
-    #ptrIndicator.hiding {
-      transform: translateX(-50%) translateY(-80px);
-      transition: transform 0.3s ease;
-    }
-
-    .ptr-icon {
-      font-size: 20px;
+    .ptr-arrow {
+      font-size: 18px; line-height: 1;
       transition: transform 0.2s ease;
-      line-height: 1;
     }
-
-    .ptr-icon.rotate {
-      animation: spin 0.7s linear infinite;
+    .ptr-arrow.flipped { transform: rotate(180deg); }
+    @keyframes spinIcon {
+      from{transform:rotate(0deg)} to{transform:rotate(360deg)}
     }
-
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-
-    .ptr-label {
+    .ptr-arrow.spinning { animation: spinIcon 0.7s linear infinite; }
+    .ptr-text {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 0.68rem;
-      color: #60a5fa;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
+      font-size: 0.66rem; font-weight: 700;
+      color: #60a5fa; letter-spacing: 0.04em; white-space: nowrap;
+    }
+    .ptr-progress {
+      width: 100%; height: 2px;
+      background: #1e3a5f; border-radius: 2px; overflow: hidden;
+      margin-top: 2px;
+    }
+    .ptr-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.1s linear;
     }
 
-    /* ── Refresh overlay shown while iframe reloads ──── */
+    /* ── Refresh overlay ──────────────────────────────── */
     #refreshOverlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: #060d1a;
-      z-index: 9998;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
+      display: none; position: fixed; inset: 0;
+      background: #060d1a; z-index: 9000;
+      flex-direction: column; align-items: center; justify-content: center; gap: 16px;
     }
-
-    #refreshOverlay.visible {
-      display: flex;
-    }
-
-    .refresh-spinner {
-      width: 40px; height: 40px;
+    #refreshOverlay.on { display: flex; }
+    .rspin {
+      width: 42px; height: 42px;
       border: 3px solid #1e3a5f;
       border-top-color: #3b82f6;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spinIcon 0.75s linear infinite;
     }
-
-    .refresh-label {
+    .rlabel {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 0.78rem;
-      color: #60a5fa;
-      font-weight: 600;
+      font-size: 0.8rem; font-weight: 600; color: #60a5fa;
     }
 
+    /* ── Install / iOS buttons ───────────────────────── */
     #installBtn {
-      display: none;
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
+      display: none; position: fixed; bottom: 24px; left: 50%;
       transform: translateX(-50%);
-      background: #0f1e33;
-      border: 1px solid #3b82f6;
-      border-radius: 14px;
-      padding: 12px 20px;
+      background: #0f1e33; border: 1px solid #3b82f6;
+      border-radius: 14px; padding: 12px 20px;
       font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: #60a5fa;
-      cursor: pointer;
-      z-index: 99999;
+      font-size: 0.82rem; font-weight: 700; color: #60a5fa;
+      cursor: pointer; z-index: 99999;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      align-items: center;
-      gap: 8px;
-      white-space: nowrap;
+      align-items: center; gap: 8px; white-space: nowrap;
       animation: slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
     }
-
     #installBtn.visible { display: flex; }
-
     @keyframes slideUp {
-      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      from{opacity:0;transform:translateX(-50%) translateY(20px)}
+      to  {opacity:1;transform:translateX(-50%) translateY(0)}
     }
 
     #iosHint {
-      display: none;
-      position: fixed;
-      bottom: 0;
-      left: 0; right: 0;
-      background: #0f1e33;
-      border-top: 2px solid #3b82f6;
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: #0f1e33; border-top: 2px solid #3b82f6;
       padding: 16px 20px;
       font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 0.76rem;
-      color: #94a3b8;
-      line-height: 1.6;
-      z-index: 99999;
-      text-align: center;
+      font-size: 0.76rem; color: #94a3b8; line-height: 1.6;
+      z-index: 99999; text-align: center;
     }
-
     #iosHint.visible { display: block; }
-
     #iosHintClose {
-      position: absolute;
-      top: 10px; right: 14px;
-      background: none;
-      border: none;
-      color: #475569;
-      font-size: 18px;
-      cursor: pointer;
+      position: absolute; top: 10px; right: 14px;
+      background: none; border: none; color: #475569;
+      font-size: 18px; cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <!-- Handle update redirect FIRST before anything renders -->
+  <!-- Handle update redirect FIRST -->
   <script>
-    (function() {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('from_update') === '1') {
-        const redirectBack    = localStorage.getItem('mms_redirect_back');
-        const redirectSession = localStorage.getItem('mms_redirect_session');
-
-        if (redirectSession && redirectSession !== 'null' && redirectSession !== '') {
-          sessionStorage.setItem('mms_session', redirectSession);
-        }
-
+    (function(){
+      var p = new URLSearchParams(window.location.search);
+      if(p.get('from_update')==='1'){
+        var back = localStorage.getItem('mms_redirect_back');
+        var sess = localStorage.getItem('mms_redirect_session');
+        if(sess && sess!=='null' && sess!=='') sessionStorage.setItem('mms_session', sess);
         localStorage.removeItem('mms_redirect_back');
         localStorage.removeItem('mms_redirect_session');
-
-        const backUrl = redirectBack && redirectBack !== 'null'
-          ? redirectBack
-          : 'https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec';
-
-        window.location.replace(backUrl);
+        window.location.replace(back && back!=='null' ? back :
+          'https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec');
       }
     })();
   </script>
@@ -295,38 +226,37 @@
     <div class="logo">⚡</div>
     <h1>Meter Management</h1>
     <p class="sub">DVVNL · MDM System · v2.0</p>
-    <div class="progress-wrap">
-      <div class="progress-bar"></div>
-    </div>
+    <div class="progress-wrap"><div class="progress-bar"></div></div>
     <p class="status" id="statusText">Connecting to MDM servers...</p>
   </div>
 
-  <!-- Pull-to-refresh indicator -->
-  <div id="ptrIndicator">
-    <div class="ptr-icon" id="ptrIcon">↓</div>
-    <div class="ptr-label" id="ptrLabel">Pull to refresh</div>
-  </div>
-
-  <!-- Refresh overlay shown while iframe reloads -->
-  <div id="refreshOverlay">
-    <div class="refresh-spinner"></div>
-    <div class="refresh-label">Refreshing...</div>
-  </div>
-
-  <!-- Full screen iframe -->
-  <iframe
-    id="appFrame"
+  <!-- iframe -->
+  <iframe id="appFrame"
     src="https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec"
     allow="clipboard-read; clipboard-write"
     sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
   ></iframe>
 
-  <!-- PWA Install button -->
-  <button id="installBtn" onclick="installPWA()">
-    📲 Install MMS App
-  </button>
+  <!-- Touch capture strip (invisible, sits above iframe top edge) -->
+  <div id="touchCapture"></div>
 
-  <!-- iOS install hint -->
+  <!-- Pull-to-refresh pill -->
+  <div id="ptrPill">
+    <div class="ptr-arrow" id="ptrArrow">↓</div>
+    <div class="ptr-text"  id="ptrText">Pull down to refresh</div>
+    <div class="ptr-progress"><div class="ptr-progress-bar" id="ptrBar"></div></div>
+  </div>
+
+  <!-- Refresh overlay -->
+  <div id="refreshOverlay">
+    <div class="rspin"></div>
+    <div class="rlabel">Refreshing app...</div>
+  </div>
+
+  <!-- Install button -->
+  <button id="installBtn" onclick="installPWA()">📲 Install MMS App</button>
+
+  <!-- iOS hint -->
   <div id="iosHint">
     <button id="iosHintClose" onclick="closeIOSHint()">×</button>
     📱 <strong style="color:#60a5fa;">Install on iPhone:</strong>
@@ -335,248 +265,237 @@
   </div>
 
   <script>
-    const APP_URL    = "https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec";
-    const loading    = document.getElementById('loadingScreen');
-    const statusText = document.getElementById('statusText');
-    const appFrame   = document.getElementById('appFrame');
-    const installBtn = document.getElementById('installBtn');
-    const iosHint    = document.getElementById('iosHint');
+    /* ── Element refs ──────────────────────────────────────── */
+    var loading        = document.getElementById('loadingScreen');
+    var statusText     = document.getElementById('statusText');
+    var appFrame       = document.getElementById('appFrame');
+    var installBtn     = document.getElementById('installBtn');
+    var iosHint        = document.getElementById('iosHint');
+    var touchCapture   = document.getElementById('touchCapture');
+    var ptrPill        = document.getElementById('ptrPill');
+    var ptrArrow       = document.getElementById('ptrArrow');
+    var ptrText        = document.getElementById('ptrText');
+    var ptrBar         = document.getElementById('ptrBar');
+    var refreshOverlay = document.getElementById('refreshOverlay');
 
-    // Cycle status messages while iframe loads
-    const messages = [
-      'Connecting to MDM servers...',
-      'Verifying configuration...',
-      'Loading dashboard...'
-    ];
-    let msgIndex = 0;
-    const msgInterval = setInterval(function() {
-      msgIndex = (msgIndex + 1) % messages.length;
-      statusText.textContent = messages[msgIndex];
-    }, 900);
+    /* ── Loading screen ────────────────────────────────────── */
+    var msgs = ['Connecting to MDM servers...','Verifying configuration...','Loading dashboard...'];
+    var mi = 0;
+    var msgTimer = setInterval(function(){ statusText.textContent = msgs[++mi % msgs.length]; }, 900);
 
-    // Hide loading screen when iframe finishes loading
-    appFrame.addEventListener('load', function() {
-      clearInterval(msgInterval);
+    appFrame.addEventListener('load', function(){
+      clearInterval(msgTimer);
       statusText.textContent = 'Ready!';
-      setTimeout(function() {
+      setTimeout(function(){
         loading.classList.add('fade-out');
-        setTimeout(function() {
-          loading.style.display = 'none';
-        }, 400);
+        setTimeout(function(){ loading.style.display='none'; }, 400);
       }, 300);
     });
-
-    // Fallback — hide loading after 8 seconds
-    setTimeout(function() {
+    setTimeout(function(){
       loading.classList.add('fade-out');
-      setTimeout(function() { loading.style.display = 'none'; }, 400);
+      setTimeout(function(){ loading.style.display='none'; }, 400);
     }, 8000);
 
-    // ── PWA Install ────────────────────────────────────
+    /* ── PWA install ───────────────────────────────────────── */
     var deferredPrompt = null;
-
-    window.addEventListener('beforeinstallprompt', function(e) {
-      e.preventDefault();
-      deferredPrompt = e;
-      setTimeout(function() {
-        installBtn.classList.add('visible');
-        setTimeout(function() {
-          installBtn.classList.remove('visible');
-        }, 30000);
-      }, 1);
+    window.addEventListener('beforeinstallprompt', function(e){
+      e.preventDefault(); deferredPrompt = e;
+      setTimeout(function(){ installBtn.classList.add('visible'); }, 1);
+      setTimeout(function(){ installBtn.classList.remove('visible'); }, 30000);
     });
-
-    function installPWA() {
-      if (!deferredPrompt) return;
+    function installPWA(){
+      if(!deferredPrompt) return;
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(function(result) {
-        if (result.outcome === 'accepted') {
-          installBtn.classList.remove('visible');
-        }
+      deferredPrompt.userChoice.then(function(r){
+        if(r.outcome==='accepted') installBtn.classList.remove('visible');
         deferredPrompt = null;
       });
     }
+    window.addEventListener('appinstalled', function(){ installBtn.classList.remove('visible'); });
 
-    window.addEventListener('appinstalled', function() {
-      installBtn.classList.remove('visible');
-    });
-
-    // iOS
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    var isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-
-    if (isIOS && isSafari && !isStandalone && !localStorage.getItem('ios_hint_dismissed')) {
-      setTimeout(function() {
-        iosHint.classList.add('visible');
-      }, 4000);
-    }
-
-    function closeIOSHint() {
+    /* ── iOS hint ──────────────────────────────────────────── */
+    var isIOS      = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    var isSafari   = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    var isStand    = window.matchMedia('(display-mode: standalone)').matches;
+    if(isIOS && isSafari && !isStand && !localStorage.getItem('ios_hint_dismissed'))
+      setTimeout(function(){ iosHint.classList.add('visible'); }, 4000);
+    function closeIOSHint(){
       iosHint.classList.remove('visible');
-      localStorage.setItem('ios_hint_dismissed', '1');
+      localStorage.setItem('ios_hint_dismissed','1');
     }
 
-    // ── Service Worker ──────────────────────────────────
-    if ('serviceWorker' in navigator) {
+    /* ── Service worker ────────────────────────────────────── */
+    if('serviceWorker' in navigator)
       navigator.serviceWorker.register('sw.js')
-        .then(function(r) { console.log('[PWA] SW registered'); })
-        .catch(function(e) { console.log('[PWA] SW failed:', e.message); });
-    }
+        .then(function(){ console.log('[PWA] SW ok'); })
+        .catch(function(e){ console.log('[PWA] SW fail:', e.message); });
 
-    // ══════════════════════════════════════════════════
-    //  PULL-TO-REFRESH
-    // ══════════════════════════════════════════════════
-    (function() {
-      var ptrIndicator = document.getElementById('ptrIndicator');
-      var ptrIcon      = document.getElementById('ptrIcon');
-      var ptrLabel     = document.getElementById('ptrLabel');
-      var refreshOverlay = document.getElementById('refreshOverlay');
+    /* ════════════════════════════════════════════════════════
+       PULL-TO-REFRESH
+       Strategy: A transparent div (#touchCapture) sits on top
+       of the iframe covering only the top 70 px.
+       - pointer-events:auto  → captures touches normally
+       - We track touchstart/move/end on this strip
+       - When NOT pulling, we set pointer-events:none so taps
+         fall through to the iframe underneath
+       - When a downward pull is detected we keep
+         pointer-events:auto to own the gesture
+    ═════════════════════════════════════════════════════════ */
+    (function(){
 
-      // Thresholds
-      var TRIGGER_THRESHOLD = 80;   // px of pull needed to trigger refresh
-      var MAX_PULL          = 120;  // max px the indicator travels down
+      var TRIGGER  = 80;   // px of pull to trigger refresh
+      var MAX_PULL = 110;  // max visual travel of pill
 
-      // State
-      var touchStartY   = 0;
-      var touchStartX   = 0;
-      var currentPull   = 0;
-      var isPulling     = false;
-      var isRefreshing  = false;
-      var triggered     = false;
+      var startY      = 0;
+      var pulling     = false;
+      var refreshing  = false;
+      var triggered   = false;
 
-      // Only activate when the touch starts within the top 60px of the screen
-      // This avoids interfering with scrolling inside the iframe content
-      var TOP_ZONE = 60;
+      /* Start: always transparent so taps reach iframe */
+      touchCapture.style.pointerEvents = 'none';
 
-      document.addEventListener('touchstart', function(e) {
-        if (isRefreshing) return;
-        var touch = e.touches[0];
-        touchStartY = touch.clientY;
-        touchStartX = touch.clientX;
-        isPulling   = false;
-        triggered   = false;
-        currentPull = 0;
+      /* ── touchstart on the capture strip ──────────────── */
+      touchCapture.addEventListener('touchstart', function(e){
+        if(refreshing) return;
+        startY   = e.touches[0].clientY;
+        pulling  = false;
+        triggered = false;
+        /* Keep pointer-events:none — let tap go through until
+           we confirm it's a downward drag                    */
       }, { passive: true });
 
-      document.addEventListener('touchmove', function(e) {
-        if (isRefreshing) return;
+      /* ── We also need to watch touchmove on the DOCUMENT
+           because touchstart was passive and the finger can
+           move outside the strip. But to actually intercept
+           the touch before the iframe steals it we use a
+           non-passive listener on touchCapture itself.      */
+      touchCapture.addEventListener('touchmove', onTouchMove, { passive: false });
+      /* Fallback for when finger exits the strip */
+      document.addEventListener('touchmove', onTouchMove, { passive: false });
 
-        var touch    = e.touches[0];
-        var deltaY   = touch.clientY - touchStartY;
-        var deltaX   = touch.clientX - touchStartX;
+      function onTouchMove(e){
+        if(refreshing) return;
+        var t      = e.touches[0];
+        var deltaY = t.clientY - startY;
+        var deltaX = Math.abs(t.clientX - (e.touches[0] ? e.touches[0].clientX : t.clientX));
 
-        // Only activate if:
-        // 1. Touch started in the top zone
-        // 2. Pulling downward (positive deltaY)
-        // 3. More vertical than horizontal (not a side-swipe)
-        if (touchStartY > TOP_ZONE) return;
-        if (deltaY <= 0) return;
-        if (Math.abs(deltaX) > Math.abs(deltaY) * 0.8) return;
+        /* Only act on downward swipes starting near the top */
+        if(startY > 80) return;
+        if(deltaY <= 2) return;
 
-        isPulling   = true;
-        currentPull = Math.min(deltaY * 0.5, MAX_PULL); // dampen the pull
+        /* Once we know it is a downward pull, own the strip  */
+        touchCapture.style.pointerEvents = 'auto';
+        pulling = true;
 
-        // Move indicator into view
-        var indicatorY = Math.min(currentPull - 10, MAX_PULL - 10);
-        ptrIndicator.style.transform =
-          'translateX(-50%) translateY(' + indicatorY + 'px)';
-        ptrIndicator.classList.add('pulling');
-        ptrIndicator.classList.remove('releasing', 'hiding');
+        /* Prevent default to stop browser's own PTR on some
+           Android browsers                                   */
+        if(e.cancelable) e.preventDefault();
 
-        if (currentPull >= TRIGGER_THRESHOLD) {
-          // Ready to release
-          ptrIcon.textContent  = '↑';
-          ptrIcon.style.transform = 'rotate(180deg)';
-          ptrLabel.textContent = 'Release to refresh';
+        var pull = Math.min(deltaY * 0.55, MAX_PULL);
+        var pct  = Math.min(pull / TRIGGER, 1);
+
+        /* Move pill into view */
+        var pillY = Math.min(pull - 8, MAX_PULL - 8);
+        ptrPill.style.transform = 'translateX(-50%) translateY(' + pillY + 'px)';
+        ptrPill.style.transition = 'none';
+
+        /* Update progress bar */
+        ptrBar.style.width = Math.round(pct * 100) + '%';
+
+        if(pull >= TRIGGER){
+          ptrArrow.textContent = '↑';
+          ptrArrow.className   = 'ptr-arrow flipped';
+          ptrText.textContent  = 'Release to refresh';
           triggered = true;
         } else {
-          // Still pulling
-          var progress = Math.round((currentPull / TRIGGER_THRESHOLD) * 100);
-          ptrIcon.textContent     = '↓';
-          ptrIcon.style.transform = 'rotate(0deg)';
-          ptrLabel.textContent    = 'Pull to refresh (' + progress + '%)';
+          ptrArrow.textContent = '↓';
+          ptrArrow.className   = 'ptr-arrow';
+          ptrText.textContent  = 'Pull down to refresh';
           triggered = false;
         }
-      }, { passive: true });
+      }
 
-      document.addEventListener('touchend', function() {
-        if (!isPulling) return;
-        isPulling = false;
+      document.addEventListener('touchend', function(){
+        if(!pulling) return;
+        pulling = false;
 
-        if (triggered) {
-          // Snap indicator to visible position and start refresh
-          ptrIcon.textContent     = '🔄';
-          ptrIcon.style.transform = 'rotate(0deg)';
-          ptrIcon.classList.add('rotate');
-          ptrLabel.textContent    = 'Refreshing...';
-          ptrIndicator.classList.remove('pulling');
-          ptrIndicator.classList.add('releasing');
-          ptrIndicator.style.transform = 'translateX(-50%) translateY(10px)';
+        /* Release pointer-events so next tap hits iframe */
+        touchCapture.style.pointerEvents = 'none';
 
+        if(triggered){
           doRefresh();
         } else {
-          // Snap back — not enough pull
-          ptrIndicator.style.transform = '';
-          ptrIndicator.classList.remove('pulling');
-          ptrIndicator.classList.add('hiding');
-          setTimeout(function() {
-            ptrIndicator.classList.remove('hiding');
-            resetPTR();
-          }, 350);
+          snapBack();
         }
       }, { passive: true });
 
-      function doRefresh() {
-        isRefreshing = true;
+      document.addEventListener('touchcancel', function(){
+        pulling = false;
+        touchCapture.style.pointerEvents = 'none';
+        snapBack();
+      }, { passive: true });
 
-        // Short delay so user sees the "Refreshing..." state
-        setTimeout(function() {
-          // Hide indicator
-          ptrIndicator.style.transform = '';
-          ptrIndicator.classList.remove('releasing', 'pulling');
-          ptrIndicator.classList.add('hiding');
-
-          // Show full-screen overlay while iframe reloads
-          refreshOverlay.classList.add('visible');
-
-          // Reload the iframe
-          appFrame.src = appFrame.src;
-
-          // Hide overlay once iframe finishes loading
-          appFrame.onload = function() {
-            refreshOverlay.classList.remove('visible');
-            isRefreshing = false;
-            resetPTR();
-
-            // Restore normal load handler
-            appFrame.onload = null;
-          };
-
-          // Safety fallback — hide overlay after 12 seconds
-          setTimeout(function() {
-            if (isRefreshing) {
-              refreshOverlay.classList.remove('visible');
-              isRefreshing = false;
-              resetPTR();
-            }
-          }, 12000);
-
-        }, 400);
+      /* ── Animate pill back up ───────────────────────── */
+      function snapBack(){
+        ptrPill.style.transition = 'transform 0.3s ease';
+        ptrPill.style.transform  = 'translateX(-50%) translateY(-90px)';
+        ptrBar.style.width = '0%';
+        resetPill();
       }
 
-      function resetPTR() {
-        ptrIcon.textContent     = '↓';
-        ptrIcon.style.transform = 'rotate(0deg)';
-        ptrIcon.classList.remove('rotate');
-        ptrLabel.textContent    = 'Pull to refresh';
-        triggered               = false;
-        currentPull             = 0;
+      /* ── Do the actual refresh ──────────────────────── */
+      function doRefresh(){
+        refreshing = true;
+
+        /* Show spinner in pill */
+        ptrArrow.textContent = '↻';
+        ptrArrow.className   = 'ptr-arrow spinning';
+        ptrText.textContent  = 'Refreshing...';
+        ptrBar.style.width   = '100%';
+
+        /* Hold pill visible briefly */
+        setTimeout(function(){
+          /* Slide pill away */
+          ptrPill.style.transition = 'transform 0.3s ease';
+          ptrPill.style.transform  = 'translateX(-50%) translateY(-90px)';
+
+          /* Show dark overlay */
+          refreshOverlay.classList.add('on');
+
+          /* Reload iframe */
+          appFrame.src = appFrame.src;
+
+          /* Hide overlay when iframe fires load */
+          function onLoad(){
+            appFrame.removeEventListener('load', onLoad);
+            refreshOverlay.classList.remove('on');
+            refreshing = false;
+            ptrBar.style.width = '0%';
+            resetPill();
+          }
+          appFrame.addEventListener('load', onLoad);
+
+          /* Safety timeout */
+          setTimeout(function(){
+            if(!refreshing) return;
+            appFrame.removeEventListener('load', onLoad);
+            refreshOverlay.classList.remove('on');
+            refreshing = false;
+            ptrBar.style.width = '0%';
+            resetPill();
+          }, 15000);
+
+        }, 500);
+      }
+
+      function resetPill(){
+        ptrArrow.textContent = '↓';
+        ptrArrow.className   = 'ptr-arrow';
+        ptrText.textContent  = 'Pull down to refresh';
+        triggered = false;
       }
 
     })();
-    // ══════════════════════════════════════════════════
-
   </script>
 </body>
 </html>
