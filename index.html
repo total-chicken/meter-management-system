@@ -16,22 +16,124 @@
 
     body {
       background: #060d1a;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       overflow: hidden;
-      width: 100vw;
-      height: 100vh;
+      width: 100vw; height: 100vh;
     }
 
-    /* ── Loading screen ───────────────────────────────── */
-    #loadingScreen {
+    /* ── iframe fills everything ───────────────────── */
+    #appFrame {
       position: fixed;
       inset: 0;
-      background: #060d1a;
-      display: flex;
+      width: 100%; height: 100%;
+      border: none; display: block;
+      z-index: 1;
+    }
+
+    /*
+      THIN ALWAYS-VISIBLE STRIP at the very top.
+      pointer-events:auto so it always receives touchstart.
+      Only 8px tall — invisible to user but catches the
+      finger before the iframe does.
+    */
+    #ptrStrip {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 8px;
+      z-index: 50;
+      background: transparent;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    /*
+      Full-screen gesture lock overlay.
+      Created dynamically once a pull is detected.
+      Sits above the iframe so touch events stay with us
+      for the rest of the drag, then removed on touchend.
+    */
+    #ptrLock {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 49;
+      background: transparent;
+      touch-action: none;
+    }
+    #ptrLock.active { display: block; }
+
+    /* ── Pull pill ─────────────────────────────────── */
+    #ptrPill {
+      position: fixed;
+      top: 0; left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      z-index: 200;
+      pointer-events: none;
+      background: #0f1e33;
+      border: 1px solid #1e3a5f;
+      border-top: none;
+      border-radius: 0 0 20px 20px;
+      padding: 8px 24px 12px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      min-width: 160px;
+    }
+
+    .pill-icon {
+      font-size: 20px; line-height: 1;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .pill-icon.spinning {
+      display: inline-block;
+      animation: spin 0.6s linear infinite;
+    }
+    .pill-text {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.65rem; font-weight: 700;
+      color: #60a5fa; letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .pill-track {
+      width: 100%; height: 2px;
+      background: #1e3a5f; border-radius: 2px;
+      overflow: hidden; margin-top: 3px;
+    }
+    .pill-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      border-radius: 2px;
+      width: 0%;
+    }
+
+    /* ── Refresh overlay ───────────────────────────── */
+    #refreshOverlay {
+      display: none; position: fixed; inset: 0;
+      background: #060d1a; z-index: 9000;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      align-items: center; justify-content: center; gap: 16px;
+    }
+    #refreshOverlay.on { display: flex; }
+    .rspin {
+      width: 44px; height: 44px;
+      border: 3px solid #1e3a5f;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    .rlabel {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.8rem; font-weight: 600; color: #60a5fa;
+    }
+
+    /* ── Loading screen ────────────────────────────── */
+    #loadingScreen {
+      position: fixed; inset: 0;
+      background: #060d1a;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       z-index: 9999;
       transition: opacity 0.4s ease;
     }
@@ -42,25 +144,24 @@
       background: linear-gradient(135deg, #3b82f6, #6366f1);
       border-radius: 20px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 32px;
-      margin-bottom: 24px;
+      font-size: 32px; margin-bottom: 24px;
       box-shadow: 0 8px 32px rgba(59,130,246,0.4);
-      animation: logoPulse 2s ease-in-out infinite;
+      animation: lp 2s ease-in-out infinite;
     }
-    @keyframes logoPulse {
-      0%,100% { box-shadow: 0 8px 32px rgba(59,130,246,0.4); }
-      50%     { box-shadow: 0 8px 48px rgba(59,130,246,0.7); }
+    @keyframes lp {
+      0%,100%{ box-shadow:0 8px 32px rgba(59,130,246,0.4); }
+      50%    { box-shadow:0 8px 48px rgba(59,130,246,0.7); }
     }
-
     h1 {
       font-family: 'Segoe UI', system-ui, sans-serif;
       font-size: 1.3rem; font-weight: 800;
-      color: #f1f5f9; margin-bottom: 6px; letter-spacing: -0.02em;
+      color: #f1f5f9; margin-bottom: 6px;
     }
     .sub {
       font-family: 'Segoe UI', system-ui, sans-serif;
       font-size: 0.7rem; color: #475569;
-      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 32px;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 32px;
     }
     .progress-wrap {
       width: 200px; height: 3px;
@@ -70,107 +171,20 @@
     .progress-bar {
       height: 100%; border-radius: 100px;
       background: linear-gradient(90deg, #3b82f6, #6366f1);
-      animation: prog 2s ease forwards;
+      animation: pg 2s ease forwards;
     }
-    @keyframes prog {
+    @keyframes pg {
       0%{width:0%} 50%{width:70%} 80%{width:90%} 100%{width:100%}
     }
-    .status {
+    .status-txt {
       font-family: 'Segoe UI', system-ui, sans-serif;
       font-size: 0.72rem; color: #60a5fa;
     }
 
-    /* ── App iframe ───────────────────────────────────── */
-    #appFrame {
-      position: fixed;
-      inset: 0;
-      width: 100%; height: 100%;
-      border: none; display: block;
-      z-index: 1;
-    }
-
-    /* ── Touch capture strip — sits ABOVE the iframe ──── */
-    /* Only covers the top 70px. Passes pointer-events to
-       iframe when not actively tracking a pull gesture.   */
-    #touchCapture {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 70px;
-      z-index: 100;
-      /* transparent — invisible to user */
-      background: transparent;
-      /* pointer-events ACTIVE by default so it captures
-         touchstart. We disable it during normal use so
-         taps/scrolls reach the iframe. Set via JS.        */
-      pointer-events: auto;
-      /* Allow touch but block mouse so desktop clicks pass through */
-      touch-action: pan-down;
-    }
-
-    /* ── Pull-to-refresh pill ─────────────────────────── */
-    #ptrPill {
-      position: fixed;
-      top: 0; left: 50%;
-      transform: translateX(-50%) translateY(-90px);
-      z-index: 200;
-      background: #0f1e33;
-      border: 1px solid #1e3a5f;
-      border-radius: 0 0 22px 22px;
-      padding: 10px 22px 13px;
-      display: flex; flex-direction: column;
-      align-items: center; gap: 5px;
-      pointer-events: none;
-      min-width: 150px;
-    }
-    .ptr-arrow {
-      font-size: 18px; line-height: 1;
-      transition: transform 0.2s ease;
-    }
-    .ptr-arrow.flipped { transform: rotate(180deg); }
-    @keyframes spinIcon {
-      from{transform:rotate(0deg)} to{transform:rotate(360deg)}
-    }
-    .ptr-arrow.spinning { animation: spinIcon 0.7s linear infinite; }
-    .ptr-text {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 0.66rem; font-weight: 700;
-      color: #60a5fa; letter-spacing: 0.04em; white-space: nowrap;
-    }
-    .ptr-progress {
-      width: 100%; height: 2px;
-      background: #1e3a5f; border-radius: 2px; overflow: hidden;
-      margin-top: 2px;
-    }
-    .ptr-progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #3b82f6, #6366f1);
-      border-radius: 2px;
-      width: 0%;
-      transition: width 0.1s linear;
-    }
-
-    /* ── Refresh overlay ──────────────────────────────── */
-    #refreshOverlay {
-      display: none; position: fixed; inset: 0;
-      background: #060d1a; z-index: 9000;
-      flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-    }
-    #refreshOverlay.on { display: flex; }
-    .rspin {
-      width: 42px; height: 42px;
-      border: 3px solid #1e3a5f;
-      border-top-color: #3b82f6;
-      border-radius: 50%;
-      animation: spinIcon 0.75s linear infinite;
-    }
-    .rlabel {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      font-size: 0.8rem; font-weight: 600; color: #60a5fa;
-    }
-
-    /* ── Install / iOS buttons ───────────────────────── */
+    /* ── Install / iOS ─────────────────────────────── */
     #installBtn {
-      display: none; position: fixed; bottom: 24px; left: 50%;
+      display: none; position: fixed;
+      bottom: 24px; left: 50%;
       transform: translateX(-50%);
       background: #0f1e33; border: 1px solid #3b82f6;
       border-radius: 14px; padding: 12px 20px;
@@ -179,16 +193,12 @@
       cursor: pointer; z-index: 99999;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
       align-items: center; gap: 8px; white-space: nowrap;
-      animation: slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
     }
     #installBtn.visible { display: flex; }
-    @keyframes slideUp {
-      from{opacity:0;transform:translateX(-50%) translateY(20px)}
-      to  {opacity:1;transform:translateX(-50%) translateY(0)}
-    }
 
     #iosHint {
-      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      display: none; position: fixed;
+      bottom: 0; left: 0; right: 0;
       background: #0f1e33; border-top: 2px solid #3b82f6;
       padding: 16px 20px;
       font-family: 'Segoe UI', system-ui, sans-serif;
@@ -198,24 +208,24 @@
     #iosHint.visible { display: block; }
     #iosHintClose {
       position: absolute; top: 10px; right: 14px;
-      background: none; border: none; color: #475569;
-      font-size: 18px; cursor: pointer;
+      background: none; border: none;
+      color: #475569; font-size: 18px; cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <!-- Handle update redirect FIRST -->
+  <!-- Redirect handler -->
   <script>
     (function(){
-      var p = new URLSearchParams(window.location.search);
+      var p=new URLSearchParams(window.location.search);
       if(p.get('from_update')==='1'){
-        var back = localStorage.getItem('mms_redirect_back');
-        var sess = localStorage.getItem('mms_redirect_session');
-        if(sess && sess!=='null' && sess!=='') sessionStorage.setItem('mms_session', sess);
+        var back=localStorage.getItem('mms_redirect_back');
+        var sess=localStorage.getItem('mms_redirect_session');
+        if(sess&&sess!=='null'&&sess!=='') sessionStorage.setItem('mms_session',sess);
         localStorage.removeItem('mms_redirect_back');
         localStorage.removeItem('mms_redirect_session');
-        window.location.replace(back && back!=='null' ? back :
+        window.location.replace(back&&back!=='null'?back:
           'https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec');
       }
     })();
@@ -227,24 +237,27 @@
     <h1>Meter Management</h1>
     <p class="sub">DVVNL · MDM System · v2.0</p>
     <div class="progress-wrap"><div class="progress-bar"></div></div>
-    <p class="status" id="statusText">Connecting to MDM servers...</p>
+    <p class="status-txt" id="statusText">Connecting to MDM servers...</p>
   </div>
 
-  <!-- iframe -->
+  <!-- App iframe -->
   <iframe id="appFrame"
     src="https://script.google.com/a/~/macros/s/AKfycbzaYOxfFzLh72UHACcokZB_aBBCPOA-kEebh4Ky8OhVJJ0DgeyhZt9FWnyiU_75NoIecA/exec"
     allow="clipboard-read; clipboard-write"
     sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
   ></iframe>
 
-  <!-- Touch capture strip (invisible, sits above iframe top edge) -->
-  <div id="touchCapture"></div>
+  <!-- 8px strip that always captures touchstart at the top -->
+  <div id="ptrStrip"></div>
 
-  <!-- Pull-to-refresh pill -->
+  <!-- Full-screen lock overlay (activated during drag) -->
+  <div id="ptrLock"></div>
+
+  <!-- Pull pill -->
   <div id="ptrPill">
-    <div class="ptr-arrow" id="ptrArrow">↓</div>
-    <div class="ptr-text"  id="ptrText">Pull down to refresh</div>
-    <div class="ptr-progress"><div class="ptr-progress-bar" id="ptrBar"></div></div>
+    <span class="pill-icon" id="pillIcon">↓</span>
+    <span class="pill-text" id="pillText">Pull down to refresh</span>
+    <div class="pill-track"><div class="pill-fill" id="pillFill"></div></div>
   </div>
 
   <!-- Refresh overlay -->
@@ -265,237 +278,249 @@
   </div>
 
   <script>
-    /* ── Element refs ──────────────────────────────────────── */
+    /* ── refs ──────────────────────────────────────────── */
     var loading        = document.getElementById('loadingScreen');
     var statusText     = document.getElementById('statusText');
     var appFrame       = document.getElementById('appFrame');
+    var ptrStrip       = document.getElementById('ptrStrip');
+    var ptrLock        = document.getElementById('ptrLock');
+    var ptrPill        = document.getElementById('ptrPill');
+    var pillIcon       = document.getElementById('pillIcon');
+    var pillText       = document.getElementById('pillText');
+    var pillFill       = document.getElementById('pillFill');
+    var refreshOverlay = document.getElementById('refreshOverlay');
     var installBtn     = document.getElementById('installBtn');
     var iosHint        = document.getElementById('iosHint');
-    var touchCapture   = document.getElementById('touchCapture');
-    var ptrPill        = document.getElementById('ptrPill');
-    var ptrArrow       = document.getElementById('ptrArrow');
-    var ptrText        = document.getElementById('ptrText');
-    var ptrBar         = document.getElementById('ptrBar');
-    var refreshOverlay = document.getElementById('refreshOverlay');
 
-    /* ── Loading screen ────────────────────────────────────── */
-    var msgs = ['Connecting to MDM servers...','Verifying configuration...','Loading dashboard...'];
-    var mi = 0;
-    var msgTimer = setInterval(function(){ statusText.textContent = msgs[++mi % msgs.length]; }, 900);
-
-    appFrame.addEventListener('load', function(){
-      clearInterval(msgTimer);
-      statusText.textContent = 'Ready!';
+    /* ── Loading screen ────────────────────────────────── */
+    var msgs=['Connecting to MDM servers...','Verifying configuration...','Loading dashboard...'];
+    var mi=0;
+    var mt=setInterval(function(){ statusText.textContent=msgs[++mi%msgs.length]; },900);
+    appFrame.addEventListener('load',function(){
+      clearInterval(mt); statusText.textContent='Ready!';
       setTimeout(function(){
         loading.classList.add('fade-out');
-        setTimeout(function(){ loading.style.display='none'; }, 400);
-      }, 300);
+        setTimeout(function(){ loading.style.display='none'; },400);
+      },300);
     });
     setTimeout(function(){
       loading.classList.add('fade-out');
-      setTimeout(function(){ loading.style.display='none'; }, 400);
-    }, 8000);
+      setTimeout(function(){ loading.style.display='none'; },400);
+    },8000);
 
-    /* ── PWA install ───────────────────────────────────────── */
-    var deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', function(e){
-      e.preventDefault(); deferredPrompt = e;
-      setTimeout(function(){ installBtn.classList.add('visible'); }, 1);
-      setTimeout(function(){ installBtn.classList.remove('visible'); }, 30000);
+    /* ── PWA install ───────────────────────────────────── */
+    var dp=null;
+    window.addEventListener('beforeinstallprompt',function(e){
+      e.preventDefault(); dp=e;
+      setTimeout(function(){ installBtn.classList.add('visible'); },1);
+      setTimeout(function(){ installBtn.classList.remove('visible'); },30000);
     });
     function installPWA(){
-      if(!deferredPrompt) return;
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(function(r){
+      if(!dp) return;
+      dp.prompt();
+      dp.userChoice.then(function(r){
         if(r.outcome==='accepted') installBtn.classList.remove('visible');
-        deferredPrompt = null;
+        dp=null;
       });
     }
-    window.addEventListener('appinstalled', function(){ installBtn.classList.remove('visible'); });
+    window.addEventListener('appinstalled',function(){ installBtn.classList.remove('visible'); });
 
-    /* ── iOS hint ──────────────────────────────────────────── */
-    var isIOS      = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    var isSafari   = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    var isStand    = window.matchMedia('(display-mode: standalone)').matches;
-    if(isIOS && isSafari && !isStand && !localStorage.getItem('ios_hint_dismissed'))
-      setTimeout(function(){ iosHint.classList.add('visible'); }, 4000);
+    /* ── iOS hint ──────────────────────────────────────── */
+    var isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+    var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    var isStand  = window.matchMedia('(display-mode: standalone)').matches;
+    if(isIOS&&isSafari&&!isStand&&!localStorage.getItem('ios_hint_dismissed'))
+      setTimeout(function(){ iosHint.classList.add('visible'); },4000);
     function closeIOSHint(){
       iosHint.classList.remove('visible');
       localStorage.setItem('ios_hint_dismissed','1');
     }
 
-    /* ── Service worker ────────────────────────────────────── */
+    /* ── Service worker ────────────────────────────────── */
     if('serviceWorker' in navigator)
-      navigator.serviceWorker.register('sw.js')
-        .then(function(){ console.log('[PWA] SW ok'); })
-        .catch(function(e){ console.log('[PWA] SW fail:', e.message); });
+      navigator.serviceWorker.register('sw.js').catch(function(){});
 
-    /* ════════════════════════════════════════════════════════
+    /* ════════════════════════════════════════════════════
        PULL-TO-REFRESH
-       Strategy: A transparent div (#touchCapture) sits on top
-       of the iframe covering only the top 70 px.
-       - pointer-events:auto  → captures touches normally
-       - We track touchstart/move/end on this strip
-       - When NOT pulling, we set pointer-events:none so taps
-         fall through to the iframe underneath
-       - When a downward pull is detected we keep
-         pointer-events:auto to own the gesture
-    ═════════════════════════════════════════════════════════ */
+       ────────────────────────────────────────────────────
+       The 8-px #ptrStrip always sits above the iframe and
+       always has pointer-events:auto, so it reliably catches
+       touchstart before the iframe.
+
+       Once a downward drag starts we activate #ptrLock —
+       a transparent full-screen overlay (z-index 49, below
+       the strip but above the iframe) that owns the rest of
+       the touch sequence. This prevents the iframe from ever
+       receiving the touchmove/touchend.
+
+       On touchend we deactivate ptrLock immediately.
+    ════════════════════════════════════════════════════ */
     (function(){
 
-      var TRIGGER  = 80;   // px of pull to trigger refresh
-      var MAX_PULL = 110;  // max visual travel of pill
+      var TRIGGER    = 75;   /* px to trigger */
+      var MAX_VISUAL = 100;  /* max pill travel */
+      var DAMPEN     = 0.55; /* drag resistance */
 
-      var startY      = 0;
-      var pulling     = false;
-      var refreshing  = false;
-      var triggered   = false;
+      var startY     = 0;
+      var startId    = -1;
+      var pulling    = false;
+      var refreshing = false;
+      var triggered  = false;
 
-      /* Start: always transparent so taps reach iframe */
-      touchCapture.style.pointerEvents = 'none';
-
-      /* ── touchstart on the capture strip ──────────────── */
-      touchCapture.addEventListener('touchstart', function(e){
+      /* ── touchstart on the 8-px strip ──────────────── */
+      ptrStrip.addEventListener('touchstart', function(e){
         if(refreshing) return;
-        startY   = e.touches[0].clientY;
-        pulling  = false;
+        var t = e.changedTouches[0];
+        startY  = t.clientY;
+        startId = t.identifier;
+        pulling = false;
         triggered = false;
-        /* Keep pointer-events:none — let tap go through until
-           we confirm it's a downward drag                    */
       }, { passive: true });
 
-      /* ── We also need to watch touchmove on the DOCUMENT
-           because touchstart was passive and the finger can
-           move outside the strip. But to actually intercept
-           the touch before the iframe steals it we use a
-           non-passive listener on touchCapture itself.      */
-      touchCapture.addEventListener('touchmove', onTouchMove, { passive: false });
-      /* Fallback for when finger exits the strip */
-      document.addEventListener('touchmove', onTouchMove, { passive: false });
+      /* ── touchmove — non-passive on ptrLock so we can
+            preventDefault and own the scroll              */
+      ptrLock.addEventListener('touchmove', onMove, { passive: false });
+      /* Also catch move on the strip itself */
+      ptrStrip.addEventListener('touchmove', onMove, { passive: false });
 
-      function onTouchMove(e){
+      function onMove(e){
         if(refreshing) return;
-        var t      = e.touches[0];
-        var deltaY = t.clientY - startY;
-        var deltaX = Math.abs(t.clientX - (e.touches[0] ? e.touches[0].clientX : t.clientX));
 
-        /* Only act on downward swipes starting near the top */
-        if(startY > 80) return;
-        if(deltaY <= 2) return;
+        var t = null;
+        for(var i=0;i<e.changedTouches.length;i++){
+          if(e.changedTouches[i].identifier===startId){
+            t=e.changedTouches[i]; break;
+          }
+        }
+        if(!t) return;
 
-        /* Once we know it is a downward pull, own the strip  */
-        touchCapture.style.pointerEvents = 'auto';
-        pulling = true;
+        var dy = t.clientY - startY;
+        if(dy <= 1) return; /* not moving down */
 
-        /* Prevent default to stop browser's own PTR on some
-           Android browsers                                   */
+        /* First confirmed downward movement — activate lock */
+        if(!pulling){
+          pulling = true;
+          ptrLock.classList.add('active');
+        }
+
+        /* Prevent browser pull-to-refresh and iframe scroll */
         if(e.cancelable) e.preventDefault();
 
-        var pull = Math.min(deltaY * 0.55, MAX_PULL);
+        var pull = Math.min(dy * DAMPEN, MAX_VISUAL);
         var pct  = Math.min(pull / TRIGGER, 1);
 
-        /* Move pill into view */
-        var pillY = Math.min(pull - 8, MAX_PULL - 8);
-        ptrPill.style.transform = 'translateX(-50%) translateY(' + pillY + 'px)';
+        /* Move pill */
+        var pillY = Math.min(pull - 6, MAX_VISUAL - 6);
         ptrPill.style.transition = 'none';
+        ptrPill.style.transform  =
+          'translateX(-50%) translateY(' + pillY + 'px)';
 
-        /* Update progress bar */
-        ptrBar.style.width = Math.round(pct * 100) + '%';
+        /* Progress bar */
+        pillFill.style.width = Math.round(pct * 100) + '%';
 
         if(pull >= TRIGGER){
-          ptrArrow.textContent = '↑';
-          ptrArrow.className   = 'ptr-arrow flipped';
-          ptrText.textContent  = 'Release to refresh';
+          pillIcon.textContent = '↑';
+          pillIcon.style.transform = 'none';
+          pillText.textContent = 'Release to refresh';
           triggered = true;
         } else {
-          ptrArrow.textContent = '↓';
-          ptrArrow.className   = 'ptr-arrow';
-          ptrText.textContent  = 'Pull down to refresh';
+          pillIcon.textContent = '↓';
+          pillIcon.style.transform = 'none';
+          pillText.textContent = 'Pull down to refresh';
           triggered = false;
         }
       }
 
-      document.addEventListener('touchend', function(){
-        if(!pulling) return;
-        pulling = false;
+      /* ── touchend ───────────────────────────────────── */
+      function onEnd(e){
+        /* Check it's our touch */
+        var found = false;
+        for(var i=0;i<e.changedTouches.length;i++){
+          if(e.changedTouches[i].identifier===startId){
+            found=true; break;
+          }
+        }
+        if(!found && pulling === false) return;
 
-        /* Release pointer-events so next tap hits iframe */
-        touchCapture.style.pointerEvents = 'none';
+        ptrLock.classList.remove('active'); /* release lock immediately */
+
+        if(!pulling){ startId=-1; return; }
+        pulling = false;
+        startId = -1;
 
         if(triggered){
           doRefresh();
         } else {
           snapBack();
         }
-      }, { passive: true });
-
-      document.addEventListener('touchcancel', function(){
-        pulling = false;
-        touchCapture.style.pointerEvents = 'none';
-        snapBack();
-      }, { passive: true });
-
-      /* ── Animate pill back up ───────────────────────── */
-      function snapBack(){
-        ptrPill.style.transition = 'transform 0.3s ease';
-        ptrPill.style.transform  = 'translateX(-50%) translateY(-90px)';
-        ptrBar.style.width = '0%';
-        resetPill();
       }
 
-      /* ── Do the actual refresh ──────────────────────── */
+      ptrLock.addEventListener('touchend',    onEnd, { passive: true });
+      ptrLock.addEventListener('touchcancel', onEnd, { passive: true });
+      ptrStrip.addEventListener('touchend',    onEnd, { passive: true });
+      ptrStrip.addEventListener('touchcancel', onEnd, { passive: true });
+
+      /* ── Snap pill back ─────────────────────────────── */
+      function snapBack(){
+        ptrPill.style.transition = 'transform 0.3s ease';
+        ptrPill.style.transform  = 'translateX(-50%) translateY(-100px)';
+        pillFill.style.width = '0%';
+        setTimeout(resetPill, 350);
+      }
+
+      /* ── Execute refresh ────────────────────────────── */
       function doRefresh(){
         refreshing = true;
 
-        /* Show spinner in pill */
-        ptrArrow.textContent = '↻';
-        ptrArrow.className   = 'ptr-arrow spinning';
-        ptrText.textContent  = 'Refreshing...';
-        ptrBar.style.width   = '100%';
+        /* Pill shows spinner */
+        pillIcon.textContent = '↻';
+        pillIcon.className   = 'pill-icon spinning';
+        pillText.textContent = 'Refreshing...';
+        pillFill.style.width = '100%';
 
-        /* Hold pill visible briefly */
         setTimeout(function(){
           /* Slide pill away */
           ptrPill.style.transition = 'transform 0.3s ease';
-          ptrPill.style.transform  = 'translateX(-50%) translateY(-90px)';
+          ptrPill.style.transform  = 'translateX(-50%) translateY(-100px)';
 
           /* Show dark overlay */
           refreshOverlay.classList.add('on');
 
-          /* Reload iframe */
+          /* Reload the iframe */
           appFrame.src = appFrame.src;
 
-          /* Hide overlay when iframe fires load */
+          /* Wait for load event */
           function onLoad(){
             appFrame.removeEventListener('load', onLoad);
             refreshOverlay.classList.remove('on');
             refreshing = false;
-            ptrBar.style.width = '0%';
+            pillFill.style.width = '0%';
             resetPill();
           }
           appFrame.addEventListener('load', onLoad);
 
-          /* Safety timeout */
+          /* Safety: give up after 15 s */
           setTimeout(function(){
             if(!refreshing) return;
             appFrame.removeEventListener('load', onLoad);
             refreshOverlay.classList.remove('on');
             refreshing = false;
-            ptrBar.style.width = '0%';
+            pillFill.style.width = '0%';
             resetPill();
           }, 15000);
 
-        }, 500);
+        }, 450);
       }
 
       function resetPill(){
-        ptrArrow.textContent = '↓';
-        ptrArrow.className   = 'ptr-arrow';
-        ptrText.textContent  = 'Pull down to refresh';
-        triggered = false;
+        pillIcon.textContent   = '↓';
+        pillIcon.className     = 'pill-icon';
+        pillIcon.style.transform = 'none';
+        pillText.textContent   = 'Pull down to refresh';
+        triggered              = false;
       }
 
-    })();
+    })(); /* end PTR IIFE */
   </script>
 </body>
 </html>
